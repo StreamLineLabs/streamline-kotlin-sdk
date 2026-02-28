@@ -16,9 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline message queue for connection interruptions
 - StateFlow-based connection state observation
 - kotlinx-serialization for message encoding
+- Batch message support
+- Serialization support for Avro schemas
+- Flow-based message consumption
 - JUnit 5 test suite
+- Integration tests for producer
+
+### Fixed
+- Correct serialization for headers
+- Resolve coroutine scope cancellation
+
+### Changed
+- Extract client configuration
+- Extract data models to separate file
 
 ### Infrastructure
 - Gradle build with Kotlin 2.0
 - Maven publish plugin configuration
+- Apply ktlint formatting rules
 - Apache 2.0 license
