@@ -1,0 +1,8 @@
+# CODEOWNERS for streamline-kotlin-sdk
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @streamlinelabs/sdk-kotlin
+
+# CI/CD and GitHub configuration
+/.github/ @streamlinelabs/sdk-kotlin @streamlinelabs/maintainers
