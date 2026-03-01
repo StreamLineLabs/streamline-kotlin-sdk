@@ -35,3 +35,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Maven publish plugin configuration
 - Apply ktlint formatting rules
 - Apache 2.0 license
+
