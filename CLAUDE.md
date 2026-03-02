@@ -41,3 +41,4 @@ src/test/kotlin/io/streamline/sdk/
 - All public API methods are `suspend` functions.
 - Exceptions extend `StreamlineException` for a consistent error hierarchy.
 - Follows Kotlin coding conventions and kotlinx.coroutines best practices.
+
