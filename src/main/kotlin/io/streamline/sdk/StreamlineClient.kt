@@ -6,9 +6,12 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
@@ -145,6 +148,27 @@ class StreamlineClient(
         val session = wsSession ?: return
         val command = """{"action":"unsubscribe","topic":"$topic"}"""
         session.send(Frame.Text(command))
+    }
+
+    // -- Flow-based Consumption --
+
+    /**
+     * Returns a [Flow] of messages for the given topic. The flow subscribes
+     * on collection and unsubscribes when the collector is cancelled.
+     *
+     * ```kotlin
+     * client.messages("events").collect { msg ->
+     *     println("Got: ${msg.value}")
+     * }
+     * ```
+     */
+    fun messages(topic: String): Flow<StreamlineMessage> = callbackFlow {
+        subscribe(topic) { message ->
+            trySend(message)
+        }
+        awaitClose {
+            scope.launch { unsubscribe(topic) }
+        }
     }
 
     // -- Internals --

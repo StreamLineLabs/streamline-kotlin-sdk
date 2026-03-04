@@ -69,6 +69,67 @@ data class ConsumerGroup(
     val state: String,
 )
 
+// -- Topic Configuration --
+
+/** Configuration for creating a new topic. */
+data class CreateTopicRequest(
+    val name: String,
+    val partitions: Int = 1,
+    val replicationFactor: Int = 1,
+    val config: Map<String, String> = emptyMap(),
+)
+
+/** Detailed topic description including partition assignments. */
+@Serializable
+data class TopicDescription(
+    val name: String,
+    val partitions: Int,
+    val replicationFactor: Int,
+    val messageCount: Long = 0,
+    val config: Map<String, String> = emptyMap(),
+)
+
+// -- Consumer Group Details --
+
+/** A member of a consumer group. */
+@Serializable
+data class ConsumerGroupMember(
+    val id: String,
+    val clientId: String = "",
+    val host: String = "",
+    val assignments: List<String> = emptyList(),
+)
+
+/** Detailed description of a consumer group. */
+@Serializable
+data class ConsumerGroupDescription(
+    val id: String,
+    val state: String,
+    val members: List<ConsumerGroupMember> = emptyList(),
+    val protocol: String = "",
+)
+
+// -- Query --
+
+/** Result from a SQL query against the streaming data. */
+@Serializable
+data class QueryResult(
+    val columns: List<String> = emptyList(),
+    val rows: List<List<String>> = emptyList(),
+    val rowCount: Int = 0,
+)
+
+// -- Server Info --
+
+/** Information about the Streamline server. */
+@Serializable
+data class ServerInfo(
+    val version: String = "",
+    val uptime: Long = 0,
+    val topicCount: Int = 0,
+    val messageCount: Long = 0,
+)
+
 // -- Errors --
 
 /** Base exception for all Streamline SDK errors. */
@@ -80,3 +141,5 @@ class AuthenticationFailedException(message: String) : StreamlineException(messa
 class StreamlineTimeoutException : StreamlineException("Operation timed out")
 class TopicNotFoundException(topic: String) : StreamlineException("Topic not found: $topic")
 class OfflineQueueFullException : StreamlineException("Offline queue is full")
+class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
+class QueryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
