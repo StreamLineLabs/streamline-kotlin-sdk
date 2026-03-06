@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refactor: align DSL builder with Kotlin conventions (2026-03-05)
 
 - feat: add coroutine-based consumer API (2026-03-05)
+
+- fix: resolve suspend function cancellation handling (2026-03-06)
 ## [Unreleased]
 
 ## [0.2.0] - 2026-02-28
