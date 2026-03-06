@@ -25,6 +25,8 @@ enum class ConnectionState {
  * @property authToken Optional bearer token for authentication.
  * @property initialBackoffMs Initial reconnection backoff in milliseconds.
  * @property maxBackoffMs Maximum backoff cap in milliseconds.
+ * @property tls Optional TLS configuration for encrypted connections.
+ * @property sasl Optional SASL configuration for authentication.
  */
 data class StreamlineConfiguration(
     val url: String,
@@ -34,6 +36,8 @@ data class StreamlineConfiguration(
     val authToken: String? = null,
     val initialBackoffMs: Long = 500,
     val maxBackoffMs: Long = 30_000,
+    val tls: TlsConfig? = null,
+    val sasl: SaslConfig? = null,
 )
 
 // -- Messages --
@@ -143,3 +147,19 @@ class TopicNotFoundException(topic: String) : StreamlineException("Topic not fou
 class OfflineQueueFullException : StreamlineException("Offline queue is full")
 class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
 class QueryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
+class SchemaRegistryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
+
+// -- Schema Registry --
+
+/** Supported schema serialization formats. */
+enum class SchemaFormat { AVRO, PROTOBUF, JSON }
+
+/** Metadata about a schema stored in the registry. */
+@Serializable
+data class SchemaInfo(
+    val subject: String,
+    val id: Int,
+    val version: Int,
+    val schemaType: String = "AVRO",
+    val schema: String,
+)
