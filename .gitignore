@@ -1,9 +1,29 @@
+# Build output
 .gradle/
 build/
+.kotlin/
+out/
+local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
 .idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
-out/
-.kotlin/
-local.properties
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+
+# Test coverage
+coverage/
+
+# Misc
+*.log

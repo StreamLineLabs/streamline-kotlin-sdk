@@ -1,0 +1,8 @@
+* text=auto
+*.kt text diff=kotlin
+*.kts text diff=kotlin
+*.md text diff=markdown
+*.sh text eol=lf
+*.yaml text
+*.yml text
+gradlew text eol=lf
