@@ -126,11 +126,89 @@ tracedAdmin.createTopic("events", partitions = 3)
 tracedAdmin.query("SELECT count(*) FROM events")
 ```
 
+## Schema Registry
+
+The SDK includes a full Schema Registry client compatible with the Confluent wire format:
+
+```kotlin
+val registry = SchemaRegistryClient("http://localhost:9094")
+
+// Register a schema
+val id = registry.registerSchema("events-value", avroSchemaJson, SchemaFormat.AVRO)
+
+// Retrieve the latest schema
+val schema = registry.getLatestSchema("events-value")
+println("Version: ${schema.version}, Type: ${schema.schemaType}")
+
+// Check compatibility before evolving
+val compatible = registry.checkCompatibility("events-value", newSchema)
+
+// List subjects and versions
+val subjects = registry.listSubjects()
+val versions = registry.listVersions("events-value")
+
+registry.close()
+```
+
+Supports **AVRO**, **PROTOBUF**, and **JSON** schema formats.
+
+## Security
+
+### TLS
+
+```kotlin
+val config = StreamlineConfiguration(
+    url = "wss://streamline.example.com:9092",
+    tls = TlsConfig(
+        enabled = true,
+        trustStorePath = "/etc/ssl/truststore.jks",
+        trustStorePassword = "changeit",
+    ),
+)
+```
+
+### SASL Authentication
+
+```kotlin
+val config = StreamlineConfiguration(
+    url = "ws://streamline.example.com:9092",
+    sasl = SaslConfig(
+        mechanism = SaslMechanism.SCRAM_SHA_256,
+        username = "admin",
+        password = "secret",
+    ),
+)
+```
+
+## Producer & Consumer Configuration
+
+```kotlin
+// Producer tuning
+val producerConfig = ProducerConfig(
+    batchSize = 32768,
+    lingerMs = 5,
+    compression = CompressionType.LZ4,
+    acks = Acks.ALL,
+    idempotent = true,
+)
+
+// Consumer tuning
+val consumerConfig = ConsumerConfig(
+    groupId = "my-app",
+    autoCommit = false,
+    maxPollRecords = 1000,
+    autoOffsetReset = OffsetReset.EARLIEST,
+)
+```
+
 ## Features
 
 - **Ktor WebSocket** connection to Streamline server
 - **Coroutine-native** — all operations are `suspend` functions
 - **Admin client** — topic CRUD, consumer groups, SQL queries via HTTP REST API
+- **Schema Registry** — register, retrieve, and validate schemas (Avro, Protobuf, JSON)
+- **Security** — TLS encryption and SASL authentication (PLAIN, SCRAM-SHA-256/512)
+- **Producer/Consumer config** — batching, compression, acknowledgments, consumer groups
 - **Flow-based consumption** — idiomatic `Flow<StreamlineMessage>` for streaming
 - **Telemetry** — pluggable tracing with `ConsoleTelemetry` and W3C traceparent propagation
 - **Auto-reconnect** with exponential backoff
@@ -149,21 +227,22 @@ tracedAdmin.query("SELECT count(*) FROM events")
 | `authToken` | `null` | Optional bearer token for authentication |
 | `initialBackoffMs` | `500` | Initial reconnection backoff (ms) |
 | `maxBackoffMs` | `30000` | Maximum backoff cap (ms) |
+| `tls` | `null` | TLS configuration (see [Security](#security)) |
+| `sasl` | `null` | SASL authentication (see [Security](#security)) |
 
 ## Error Handling
 
 ```kotlin
 try {
-    client.produce("my-topic", "key", "value".toByteArray())
+    client.produce("my-topic", value = "hello")
 } catch (e: TopicNotFoundException) {
     println("Topic not found: ${e.message}")
-    println("Hint: ${e.hint}")
+} catch (e: AuthenticationFailedException) {
+    println("Auth failed: ${e.message}")
+} catch (e: SchemaRegistryException) {
+    println("Schema error: ${e.message}")
 } catch (e: StreamlineException) {
-    if (e.retryable) {
-        println("Retryable error: ${e.message}")
-    } else {
-        println("Fatal error: ${e.message}")
-    }
+    println("Streamline error: ${e.message}")
 }
 ```
 
