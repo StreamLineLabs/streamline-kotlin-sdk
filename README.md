@@ -3,6 +3,7 @@
 # Streamline Kotlin SDK
 
 [![CI](https://github.com/streamlinelabs/streamline-kotlin-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/streamlinelabs/streamline-kotlin-sdk/actions/workflows/ci.yml)
+[![codecov](https://img.shields.io/codecov/c/github/streamlinelabs/streamline-kotlin-sdk?style=flat-square)](https://codecov.io/gh/streamlinelabs/streamline-kotlin-sdk)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-blue.svg)](https://kotlinlang.org/)
 [![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue.svg)](https://streamlinelabs.dev/docs/sdks/kotlin)
@@ -210,6 +211,9 @@ val consumerConfig = ConsumerConfig(
 - **Security** — TLS encryption and SASL authentication (PLAIN, SCRAM-SHA-256/512)
 - **Producer/Consumer config** — batching, compression, acknowledgments, consumer groups
 - **Flow-based consumption** — idiomatic `Flow<StreamlineMessage>` for streaming
+- **Circuit breaker** — CLOSED → OPEN → HALF_OPEN state machine protects against cascading failures
+- **Retry policy** — exponential backoff with jitter for transient errors; integrates with `isRetryable` error classification
+- **Structured error handling** — `ErrorCode` enum, `isRetryable` flag, and `hint` on every exception
 - **Telemetry** — pluggable tracing with `ConsoleTelemetry` and W3C traceparent propagation
 - **Auto-reconnect** with exponential backoff
 - **Offline message queue** — messages produced while disconnected are buffered via `Channel`
@@ -232,52 +236,68 @@ val consumerConfig = ConsumerConfig(
 
 ## Error Handling
 
-All SDK exceptions extend `StreamlineException`. Catch specific types for targeted error handling:
+All SDK exceptions extend `StreamlineException` and include a machine-readable `code` (`ErrorCode` enum), an `isRetryable` flag, and a human-friendly `hint`:
 
-| Exception | Description | Retryable? |
-|-----------|-------------|------------|
-| `NotConnectedException` | Client is not connected | Yes — reconnects automatically |
-| `ConnectionFailedException` | Connection attempt failed | Yes — retry with backoff |
-| `AuthenticationFailedException` | Server rejected credentials | No |
-| `StreamlineTimeoutException` | Operation timed out | Yes |
-| `TopicNotFoundException` | Requested topic does not exist | No — create the topic first |
-| `OfflineQueueFullException` | Offline buffer capacity exceeded | No — reduce send rate |
-| `AdminOperationException` | Admin API call failed | Depends on cause |
-| `QueryException` | SQL query execution failed | Depends on cause |
-| `SchemaRegistryException` | Schema registry operation failed | Depends on cause |
+| Exception | Code | Retryable? | Hint |
+|-----------|------|------------|------|
+| `NotConnectedException` | `CONNECTION` | Yes | Call connect() first |
+| `ConnectionFailedException` | `CONNECTION` | Yes | Check server URL |
+| `AuthenticationFailedException` | `AUTHENTICATION` | No | Verify credentials |
+| `AuthorizationFailedException` | `AUTHORIZATION` | No | Check ACL permissions |
+| `StreamlineTimeoutException` | `TIMEOUT` | Yes | Increase timeout |
+| `TopicNotFoundException` | `TOPIC_NOT_FOUND` | No | Create topic first |
+| `OfflineQueueFullException` | `OFFLINE_QUEUE_FULL` | No | Reduce send rate |
+| `CircuitBreakerOpenException` | `CIRCUIT_BREAKER_OPEN` | Yes | Retry after reset timeout |
+| `ProducerException` | `PRODUCER` | Yes | Check message size |
+| `ConsumerException` | `CONSUMER` | Yes | Check group config |
+| `SerializationException` | `SERIALIZATION` | No | Verify message format |
+| `AdminOperationException` | `ADMIN` | Yes | Check connectivity |
+| `QueryException` | `QUERY` | No | Verify SQL syntax |
+| `SchemaRegistryException` | `SCHEMA_REGISTRY` | Yes | Check registry connectivity |
 
 ```kotlin
 try {
     client.produce("my-topic", value = "hello")
-} catch (e: TopicNotFoundException) {
-    println("Topic not found: ${e.message}")
-} catch (e: ConnectionFailedException) {
-    println("Connection failed: ${e.message}")
-    // Retryable — client will auto-reconnect
-} catch (e: AuthenticationFailedException) {
-    println("Auth failed (not retryable): ${e.message}")
-} catch (e: OfflineQueueFullException) {
-    println("Queue full — reduce send rate")
+} catch (e: CircuitBreakerOpenException) {
+    println("Circuit open for ${e.remainingMs}ms — ${e.hint}")
 } catch (e: StreamlineException) {
-    println("Streamline error: ${e.message}")
+    if (e.isRetryable) println("Transient: ${e.message} (${e.code})")
+    else println("Fatal: ${e.message} — ${e.hint}")
 }
 ```
 
-### Retry Strategy
+### Circuit Breaker
 
-The Kotlin SDK automatically retries failed sends with exponential backoff when `ProducerConfig.retries > 0` (default: 3). Configure retry behavior:
+The SDK wraps produce and subscribe operations in a `CircuitBreaker`. After consecutive failures exceed the threshold, the breaker opens and rejects calls immediately to prevent cascading failures:
 
 ```kotlin
 val client = StreamlineClient(
-    configuration = StreamlineConfiguration(url = "ws://localhost:9092"),
+    configuration = StreamlineConfiguration(
+        url = "ws://localhost:9092",
+        circuitBreakerConfig = CircuitBreakerConfig(
+            failureThreshold = 5,   // Open after 5 consecutive failures
+            resetTimeoutMs = 30_000, // Probe after 30 seconds
+        ),
+        retryPolicyConfig = RetryPolicyConfig(
+            maxRetries = 3,
+            baseDelayMs = 200,
+            maxDelayMs = 30_000,
+            jitter = true,
+        ),
+    ),
 )
-client.producerConfig = ProducerConfig(
-    retries = 5,             // Max retry attempts
-    retryBackoffMs = 200L,   // Base backoff (doubles each attempt)
-    compression = CompressionType.ZSTD,
-    batchSize = 32768,       // 32KB batches
-    lingerMs = 10L,          // 10ms batch window
-)
+// Access breaker state programmatically
+println("Circuit state: ${client.circuitBreaker.state}")
+```
+
+### Retry Policy
+
+The `RetryPolicy` retries transient failures (where `isRetryable == true`) with exponential backoff and jitter. It wraps the circuit breaker — a `CircuitBreakerOpenException` is also retryable, so the retry policy will wait and probe again:
+
+```kotlin
+// Standalone usage outside the client
+val policy = RetryPolicy(RetryPolicyConfig(maxRetries = 5, baseDelayMs = 100))
+val result = policy.execute { riskyOperation() }
 ```
 
 ## Contributing

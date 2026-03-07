@@ -38,6 +38,24 @@ cd streamline-kotlin-sdk
 - Add KDoc for public APIs
 - Keep functions focused and short
 
+## Running Tests
+
+```bash
+# Run all unit tests
+./gradlew test
+
+# Run with coverage report
+./gradlew test koverXmlReport
+
+# Run integration tests (requires running Streamline server)
+docker compose -f docker-compose.test.yml up -d
+./gradlew test -Dintegration=true
+docker compose -f docker-compose.test.yml down
+
+# Run conformance tests only
+./gradlew test --tests '*ConformanceTest*'
+```
+
 ## Pull Request Guidelines
 
 - Write clear commit messages

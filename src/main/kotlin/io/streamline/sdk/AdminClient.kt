@@ -37,6 +37,7 @@ import kotlinx.serialization.json.put
 class AdminClient(
     private val baseUrl: String,
     private val authToken: String? = null,
+    private val saslConfig: SaslConfig? = null,
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
@@ -205,7 +206,16 @@ class AdminClient(
         try {
             val response: HttpResponse = httpClient.request("$baseUrl$path") {
                 this.method = method
-                authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                // Apply auth: bearer token takes precedence, then SASL credentials
+                when {
+                    authToken != null -> header(HttpHeaders.Authorization, "Bearer $authToken")
+                    saslConfig != null -> {
+                        val credentials = java.util.Base64.getEncoder()
+                            .encodeToString("${saslConfig.username}:${saslConfig.password}".toByteArray())
+                        header(HttpHeaders.Authorization, "Basic $credentials")
+                        header("X-Streamline-SASL-Mechanism", saslConfig.mechanism.name)
+                    }
+                }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body)

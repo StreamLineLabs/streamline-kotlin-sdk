@@ -39,6 +39,30 @@ class SchemaRegistryClient(
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
+    // -- Schema cache (TTL-based) --
+
+    private data class CacheEntry<T>(val value: T, val expiresAt: Long)
+
+    private val schemaByIdCache = java.util.concurrent.ConcurrentHashMap<Int, CacheEntry<SchemaInfo>>()
+    private val latestSchemaCache = java.util.concurrent.ConcurrentHashMap<String, CacheEntry<SchemaInfo>>()
+    private val cacheTtlMs: Long = 60_000 // 1 minute default TTL
+
+    private fun <T> getFromCache(cache: java.util.concurrent.ConcurrentHashMap<*, CacheEntry<T>>, key: Any): T? {
+        @Suppress("UNCHECKED_CAST")
+        val entry = (cache as Map<Any, CacheEntry<T>>)[key] ?: return null
+        if (System.currentTimeMillis() > entry.expiresAt) {
+            (cache as java.util.concurrent.ConcurrentHashMap<Any, CacheEntry<T>>).remove(key)
+            return null
+        }
+        return entry.value
+    }
+
+    /** Clear all cached schemas. */
+    fun clearCache() {
+        schemaByIdCache.clear()
+        latestSchemaCache.clear()
+    }
+
     // -- Schema Registration --
 
     /**
@@ -61,20 +85,29 @@ class SchemaRegistryClient(
 
     /** Get the latest schema registered under the given subject. */
     suspend fun getLatestSchema(subject: String): SchemaInfo {
+        getFromCache(latestSchemaCache, subject)?.let { return it }
         val response = request(HttpMethod.Get, "/subjects/$subject/versions/latest")
-        return parseSchemaInfo(response)
+        val info = parseSchemaInfo(response)
+        latestSchemaCache[subject] = CacheEntry(info, System.currentTimeMillis() + cacheTtlMs)
+        schemaByIdCache[info.id] = CacheEntry(info, System.currentTimeMillis() + cacheTtlMs)
+        return info
     }
 
     /** Get a specific version of a schema registered under the given subject. */
     suspend fun getSchemaVersion(subject: String, version: Int): SchemaInfo {
         val response = request(HttpMethod.Get, "/subjects/$subject/versions/$version")
-        return parseSchemaInfo(response)
+        val info = parseSchemaInfo(response)
+        schemaByIdCache[info.id] = CacheEntry(info, System.currentTimeMillis() + cacheTtlMs)
+        return info
     }
 
     /** Get a schema by its globally unique ID. */
     suspend fun getSchemaById(id: Int): SchemaInfo {
+        getFromCache(schemaByIdCache, id)?.let { return it }
         val response = request(HttpMethod.Get, "/schemas/ids/$id")
-        return parseSchemaInfo(response, fallbackId = id)
+        val info = parseSchemaInfo(response, fallbackId = id)
+        schemaByIdCache[id] = CacheEntry(info, System.currentTimeMillis() + cacheTtlMs)
+        return info
     }
 
     // -- Subject Management --

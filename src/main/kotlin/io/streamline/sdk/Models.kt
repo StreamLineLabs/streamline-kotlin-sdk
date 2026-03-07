@@ -27,6 +27,8 @@ enum class ConnectionState {
  * @property maxBackoffMs Maximum backoff cap in milliseconds.
  * @property tls Optional TLS configuration for encrypted connections.
  * @property sasl Optional SASL configuration for authentication.
+ * @property circuitBreakerConfig Configuration for the circuit breaker protecting send operations.
+ * @property retryPolicyConfig Configuration for the retry policy on transient failures.
  */
 data class StreamlineConfiguration(
     val url: String,
@@ -38,6 +40,8 @@ data class StreamlineConfiguration(
     val maxBackoffMs: Long = 30_000,
     val tls: TlsConfig? = null,
     val sasl: SaslConfig? = null,
+    val circuitBreakerConfig: CircuitBreakerConfig = CircuitBreakerConfig(),
+    val retryPolicyConfig: RetryPolicyConfig = RetryPolicyConfig(),
 )
 
 // -- Messages --
@@ -134,20 +138,141 @@ data class ServerInfo(
     val messageCount: Long = 0,
 )
 
+// -- Error Codes --
+
+/** Categorizes SDK errors for programmatic handling. */
+enum class ErrorCode {
+    CONNECTION,
+    AUTHENTICATION,
+    AUTHORIZATION,
+    TOPIC_NOT_FOUND,
+    TIMEOUT,
+    PRODUCER,
+    CONSUMER,
+    SERIALIZATION,
+    CONFIG,
+    CIRCUIT_BREAKER_OPEN,
+    OFFLINE_QUEUE_FULL,
+    ADMIN,
+    QUERY,
+    SCHEMA_REGISTRY,
+    INTERNAL,
+}
+
 // -- Errors --
 
-/** Base exception for all Streamline SDK errors. */
-open class StreamlineException(message: String, cause: Throwable? = null) : Exception(message, cause)
+/**
+ * Base exception for all Streamline SDK errors.
+ *
+ * @property code Machine-readable error category for programmatic handling.
+ * @property hint A human-friendly suggestion for resolving the error.
+ * @property isRetryable Whether the operation may succeed if retried.
+ */
+open class StreamlineException(
+    message: String,
+    cause: Throwable? = null,
+    val code: ErrorCode = ErrorCode.INTERNAL,
+    val hint: String? = null,
+    val isRetryable: Boolean = false,
+) : Exception(message, cause)
 
-class NotConnectedException : StreamlineException("Client is not connected")
-class ConnectionFailedException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class AuthenticationFailedException(message: String) : StreamlineException(message)
-class StreamlineTimeoutException : StreamlineException("Operation timed out")
-class TopicNotFoundException(topic: String) : StreamlineException("Topic not found: $topic")
-class OfflineQueueFullException : StreamlineException("Offline queue is full")
-class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class QueryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class SchemaRegistryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
+class NotConnectedException : StreamlineException(
+    "Client is not connected",
+    code = ErrorCode.CONNECTION,
+    hint = "Call connect() before performing operations.",
+    isRetryable = true,
+)
+
+class ConnectionFailedException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.CONNECTION,
+    hint = "Check that the Streamline server is running and the URL is correct.",
+    isRetryable = true,
+)
+
+class AuthenticationFailedException(message: String) : StreamlineException(
+    message,
+    code = ErrorCode.AUTHENTICATION,
+    hint = "Verify your auth token or SASL credentials.",
+    isRetryable = false,
+)
+
+class AuthorizationFailedException(message: String) : StreamlineException(
+    message,
+    code = ErrorCode.AUTHORIZATION,
+    hint = "Check that the authenticated principal has the required ACL permissions.",
+    isRetryable = false,
+)
+
+class StreamlineTimeoutException(message: String = "Operation timed out") : StreamlineException(
+    message,
+    code = ErrorCode.TIMEOUT,
+    hint = "Increase the timeout or check server health.",
+    isRetryable = true,
+)
+
+class TopicNotFoundException(topic: String) : StreamlineException(
+    "Topic not found: $topic",
+    code = ErrorCode.TOPIC_NOT_FOUND,
+    hint = "Create the topic first or check for typos in the topic name.",
+    isRetryable = false,
+)
+
+class OfflineQueueFullException : StreamlineException(
+    "Offline queue is full",
+    code = ErrorCode.OFFLINE_QUEUE_FULL,
+    hint = "Reconnect to the server or increase the offline queue capacity.",
+    isRetryable = false,
+)
+
+class CircuitBreakerOpenException(val remainingMs: Long = 0) : StreamlineException(
+    "Circuit breaker is open — requests are blocked for ${remainingMs}ms",
+    code = ErrorCode.CIRCUIT_BREAKER_OPEN,
+    hint = "The remote endpoint is unhealthy. Retry after the reset timeout.",
+    isRetryable = true,
+)
+
+class ProducerException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.PRODUCER,
+    hint = "Check message size limits and server connectivity.",
+    isRetryable = true,
+)
+
+class ConsumerException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.CONSUMER,
+    hint = "Check consumer group configuration and server connectivity.",
+    isRetryable = true,
+)
+
+class SerializationException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.SERIALIZATION,
+    hint = "Verify message format matches the expected schema.",
+    isRetryable = false,
+)
+
+class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.ADMIN,
+    hint = "Check server connectivity and required permissions.",
+    isRetryable = true,
+)
+
+class QueryException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.QUERY,
+    hint = "Verify SQL syntax and that the analytics feature is enabled on the server.",
+    isRetryable = false,
+)
+
+class SchemaRegistryException(message: String, cause: Throwable? = null) : StreamlineException(
+    message, cause,
+    code = ErrorCode.SCHEMA_REGISTRY,
+    hint = "Check schema registry connectivity and schema compatibility.",
+    isRetryable = true,
+)
 
 // -- Schema Registry --
 

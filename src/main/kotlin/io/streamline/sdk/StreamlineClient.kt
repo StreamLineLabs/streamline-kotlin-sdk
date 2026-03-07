@@ -3,6 +3,7 @@ package io.streamline.sdk
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.client.request.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -16,6 +17,49 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.FileInputStream
+import java.security.KeyStore
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.TrustManagerFactory
+
+/** Builds the default Ktor HTTP client with TLS if configured. */
+private fun buildDefaultHttpClient(config: StreamlineConfiguration): HttpClient {
+    return HttpClient(CIO) {
+        install(WebSockets)
+
+        val tls = config.tls
+        if (tls != null && tls.enabled) {
+            engine {
+                https {
+                    if (tls.insecureSkipVerify) {
+                        trustManager = io.ktor.network.tls.TLSConfigBuilder().apply {
+                            // Development only — accept all certificates
+                        }.build().trustManager
+                    }
+
+                    tls.trustStorePath?.let { path ->
+                        val ks = KeyStore.getInstance(KeyStore.getDefaultType())
+                        FileInputStream(path).use { fis ->
+                            ks.load(fis, tls.trustStorePassword?.toCharArray())
+                        }
+                        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+                        tmf.init(ks)
+                        trustManager = tmf.trustManagers.first() as javax.net.ssl.X509TrustManager
+                    }
+
+                    tls.keyStorePath?.let { path ->
+                        val ks = KeyStore.getInstance(KeyStore.getDefaultType())
+                        FileInputStream(path).use { fis ->
+                            ks.load(fis, tls.keyStorePassword?.toCharArray())
+                        }
+                        val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+                        kmf.init(ks, tls.keyStorePassword?.toCharArray())
+                    }
+                }
+            }
+        }
+    }
+}
 
 /** Closure invoked when a message arrives on a subscribed topic. */
 typealias MessageHandler = suspend (StreamlineMessage) -> Unit
@@ -36,10 +80,18 @@ typealias MessageHandler = suspend (StreamlineMessage) -> Unit
  */
 class StreamlineClient(
     private val configuration: StreamlineConfiguration,
-    private val httpClient: HttpClient = HttpClient(CIO) { install(WebSockets) },
+    private val httpClient: HttpClient = buildDefaultHttpClient(configuration),
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    // -- Resilience --
+
+    /** Circuit breaker protecting send operations. */
+    val circuitBreaker = CircuitBreaker(configuration.circuitBreakerConfig)
+
+    /** Retry policy for transient failures. */
+    val retryPolicy = RetryPolicy(configuration.retryPolicyConfig)
 
     // -- Connection state --
 
@@ -85,7 +137,20 @@ class StreamlineClient(
         if (!isReconnecting) _state.value = ConnectionState.CONNECTING
 
         try {
-            val session = httpClient.webSocketSession(configuration.url) {}
+            val session = httpClient.webSocketSession(configuration.url) {
+                // Apply bearer token or SASL credentials as auth header
+                val token = configuration.authToken
+                val sasl = configuration.sasl
+                when {
+                    token != null -> header("Authorization", "Bearer $token")
+                    sasl != null -> {
+                        val credentials = java.util.Base64.getEncoder()
+                            .encodeToString("${sasl.username}:${sasl.password}".toByteArray())
+                        header("Authorization", "Basic $credentials")
+                        header("X-Streamline-SASL-Mechanism", sasl.mechanism.name)
+                    }
+                }
+            }
             wsSession = session
             _state.value = ConnectionState.CONNECTED
             retryCount = 0
@@ -112,6 +177,29 @@ class StreamlineClient(
     fun close() {
         scope.cancel()
         httpClient.close()
+    }
+
+    // -- Admin --
+
+    /**
+     * Creates an [AdminClient] that inherits auth configuration from this client.
+     *
+     * The admin client uses HTTP (default port 9094) while the streaming client
+     * uses WebSocket (default port 9092). Pass the HTTP base URL or let it
+     * default to deriving from the WebSocket URL.
+     *
+     * ```kotlin
+     * val client = StreamlineClient(config)
+     * val admin = client.admin("http://localhost:9094")
+     * val topics = admin.listTopics()
+     * ```
+     */
+    fun admin(httpBaseUrl: String): AdminClient {
+        return AdminClient(
+            baseUrl = httpBaseUrl,
+            authToken = configuration.authToken,
+            saslConfig = configuration.sasl,
+        )
     }
 
     // -- Produce --
@@ -155,9 +243,20 @@ class StreamlineClient(
             batchQueue.clear()
         }
 
+        if (messages.isEmpty()) return
         val session = wsSession ?: return
-        for (message in messages) {
-            sendWithRetry(message, session)
+
+        if (messages.size == 1) {
+            sendWithRetry(messages.first(), session)
+        } else {
+            // Send as a batch array for efficiency
+            retryPolicy.execute {
+                circuitBreaker.execute {
+                    val batchPayload = json.encodeToString(messages)
+                    val wrapper = """{"action":"produce_batch","messages":$batchPayload}"""
+                    session.send(Frame.Text(wrapper))
+                }
+            }
         }
     }
 
@@ -175,25 +274,12 @@ class StreamlineClient(
     }
 
     private suspend fun sendWithRetry(message: StreamlineMessage, session: DefaultClientWebSocketSession) {
-        val maxRetries = producerConfig.retries
-        val backoffMs = producerConfig.retryBackoffMs
-        var lastException: Exception? = null
-
-        for (attempt in 0..maxRetries) {
-            try {
+        retryPolicy.execute {
+            circuitBreaker.execute {
                 val payload = buildPayload(message)
                 session.send(Frame.Text(payload))
-                return
-            } catch (e: Exception) {
-                lastException = e
-                if (attempt < maxRetries) {
-                    val delayMs = backoffMs * (1L shl attempt.coerceAtMost(10))
-                    delay(delayMs)
-                }
             }
         }
-
-        throw ConnectionFailedException("Send failed after $maxRetries retries", lastException)
     }
 
     private fun buildPayload(message: StreamlineMessage): String {
@@ -215,8 +301,10 @@ class StreamlineClient(
         }
 
         val session = wsSession ?: return
-        val command = """{"action":"subscribe","topic":"$topic"}"""
-        session.send(Frame.Text(command))
+        circuitBreaker.execute {
+            val command = """{"action":"subscribe","topic":"$topic"}"""
+            session.send(Frame.Text(command))
+        }
     }
 
     /** Remove the subscription for the given topic. */
@@ -226,8 +314,10 @@ class StreamlineClient(
         }
 
         val session = wsSession ?: return
-        val command = """{"action":"unsubscribe","topic":"$topic"}"""
-        session.send(Frame.Text(command))
+        circuitBreaker.execute {
+            val command = """{"action":"unsubscribe","topic":"$topic"}"""
+            session.send(Frame.Text(command))
+        }
     }
 
     // -- Flow-based Consumption --

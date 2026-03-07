@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `CircuitBreaker` class with CLOSED → OPEN → HALF_OPEN state machine for resilience
+- `CircuitBreakerConfig` for configurable failure threshold, reset timeout, half-open probes
+- `RetryPolicy` class with exponential backoff, jitter, and custom retry predicates
+- `RetryPolicyConfig` for configurable max retries, base/max delay, jitter toggle
+- `ErrorCode` enum with 15 machine-readable error categories
+- `isRetryable` flag on all `StreamlineException` subclasses
+- `hint` property on all exceptions with human-friendly resolution suggestions
+- `CircuitBreakerOpenException` thrown when circuit is open
+- `AuthorizationFailedException`, `ProducerException`, `ConsumerException`, `SerializationException` error types
+- `circuitBreakerConfig` and `retryPolicyConfig` on `StreamlineConfiguration`
+- CircuitBreaker + RetryPolicy integration in `StreamlineClient.sendWithRetry()`
+- CircuitBreaker protection on `subscribe()` and `unsubscribe()` WebSocket sends
+- Batch flush optimization — multi-message batches sent as single `produce_batch` frame
 - Producer message batching with coroutine-based accumulator and configurable `batchSize`/`lingerMs`
 - Producer retry logic with exponential backoff via `sendWithRetry` suspend function
 - Compression type metadata included in WebSocket produce messages
