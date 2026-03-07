@@ -333,3 +333,19 @@ class StreamlineClient(
         }
     }
 }
+
+
+/**
+ * TLS configuration for secure broker connections.
+ *
+ * @property caCertPath Path to CA certificate file
+ * @property clientCertPath Path to client certificate for mutual TLS
+ * @property clientKeyPath Path to client private key
+ * @property verifyHostname Whether to verify server hostname (default: true)
+ */
+data class TlsConfig(
+    val caCertPath: String? = null,
+    val clientCertPath: String? = null,
+    val clientKeyPath: String? = null,
+    val verifyHostname: Boolean = true,
+)
