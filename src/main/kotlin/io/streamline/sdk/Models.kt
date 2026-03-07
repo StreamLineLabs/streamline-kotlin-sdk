@@ -163,3 +163,16 @@ data class SchemaInfo(
     val schemaType: String = "AVRO",
     val schema: String,
 )
+
+
+/**
+ * Strategy for resetting consumer offsets when no valid offset is found.
+ */
+enum class OffsetResetStrategy {
+    /** Start consuming from the earliest available offset. */
+    EARLIEST,
+    /** Start consuming from the latest offset (new messages only). */
+    LATEST,
+    /** Throw an exception if no valid offset is found. */
+    NONE
+}
