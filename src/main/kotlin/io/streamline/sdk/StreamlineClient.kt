@@ -68,6 +68,13 @@ class StreamlineClient(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // -- Producer batching --
+
+    var producerConfig: ProducerConfig = ProducerConfig()
+    private val batchMutex = Mutex()
+    private val batchQueue = mutableListOf<StreamlineMessage>()
+    private var batchFlushJob: Job? = null
+
     // -- Connection lifecycle --
 
     /** Open a WebSocket connection to the configured server URL. */
@@ -110,8 +117,10 @@ class StreamlineClient(
     // -- Produce --
 
     /**
-     * Send a message to the given topic. If the client is disconnected the
-     * message is placed in the offline queue for later delivery.
+     * Send a message to the given topic. Messages are accumulated into batches
+     * and flushed when the batch reaches [ProducerConfig.batchSize] bytes or
+     * after [ProducerConfig.lingerMs] milliseconds, whichever comes first.
+     * If disconnected, the message is placed in the offline queue.
      */
     suspend fun produce(topic: String, key: String? = null, value: String) {
         val message = StreamlineMessage(topic = topic, key = key, value = value)
@@ -122,8 +131,79 @@ class StreamlineClient(
             return
         }
 
-        val payload = json.encodeToString(message)
-        session.send(Frame.Text(payload))
+        var shouldFlush = false
+        batchMutex.withLock {
+            batchQueue.add(message)
+            val totalBytes = batchQueue.sumOf { it.value.toByteArray().size }
+            shouldFlush = totalBytes >= producerConfig.batchSize
+        }
+
+        if (shouldFlush) {
+            flushBatch()
+        } else {
+            scheduleLingerFlush()
+        }
+    }
+
+    /** Flush all pending batched messages immediately. */
+    suspend fun flushBatch() {
+        val messages: List<StreamlineMessage>
+        batchMutex.withLock {
+            batchFlushJob?.cancel()
+            batchFlushJob = null
+            messages = batchQueue.toList()
+            batchQueue.clear()
+        }
+
+        val session = wsSession ?: return
+        for (message in messages) {
+            sendWithRetry(message, session)
+        }
+    }
+
+    private fun scheduleLingerFlush() {
+        scope.launch {
+            batchMutex.withLock {
+                if (batchFlushJob != null) return@launch
+                val lingerMs = producerConfig.lingerMs.coerceAtLeast(1)
+                batchFlushJob = scope.launch {
+                    delay(lingerMs)
+                    flushBatch()
+                }
+            }
+        }
+    }
+
+    private suspend fun sendWithRetry(message: StreamlineMessage, session: DefaultClientWebSocketSession) {
+        val maxRetries = producerConfig.retries
+        val backoffMs = producerConfig.retryBackoffMs
+        var lastException: Exception? = null
+
+        for (attempt in 0..maxRetries) {
+            try {
+                val payload = buildPayload(message)
+                session.send(Frame.Text(payload))
+                return
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < maxRetries) {
+                    val delayMs = backoffMs * (1L shl attempt.coerceAtMost(10))
+                    delay(delayMs)
+                }
+            }
+        }
+
+        throw ConnectionFailedException("Send failed after $maxRetries retries", lastException)
+    }
+
+    private fun buildPayload(message: StreamlineMessage): String {
+        val compression = producerConfig.compression
+        return if (compression != CompressionType.NONE) {
+            // Include compression metadata for server-side handling
+            """{"topic":"${message.topic}","key":${message.key?.let { "\"$it\"" } ?: "null"},"value":"${message.value}","compression":"${compression.name.lowercase()}"}"""
+        } else {
+            json.encodeToString(message)
+        }
     }
 
     // -- Subscribe / Unsubscribe --

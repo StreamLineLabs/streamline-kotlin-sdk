@@ -232,18 +232,52 @@ val consumerConfig = ConsumerConfig(
 
 ## Error Handling
 
+All SDK exceptions extend `StreamlineException`. Catch specific types for targeted error handling:
+
+| Exception | Description | Retryable? |
+|-----------|-------------|------------|
+| `NotConnectedException` | Client is not connected | Yes — reconnects automatically |
+| `ConnectionFailedException` | Connection attempt failed | Yes — retry with backoff |
+| `AuthenticationFailedException` | Server rejected credentials | No |
+| `StreamlineTimeoutException` | Operation timed out | Yes |
+| `TopicNotFoundException` | Requested topic does not exist | No — create the topic first |
+| `OfflineQueueFullException` | Offline buffer capacity exceeded | No — reduce send rate |
+| `AdminOperationException` | Admin API call failed | Depends on cause |
+| `QueryException` | SQL query execution failed | Depends on cause |
+| `SchemaRegistryException` | Schema registry operation failed | Depends on cause |
+
 ```kotlin
 try {
     client.produce("my-topic", value = "hello")
 } catch (e: TopicNotFoundException) {
     println("Topic not found: ${e.message}")
+} catch (e: ConnectionFailedException) {
+    println("Connection failed: ${e.message}")
+    // Retryable — client will auto-reconnect
 } catch (e: AuthenticationFailedException) {
-    println("Auth failed: ${e.message}")
-} catch (e: SchemaRegistryException) {
-    println("Schema error: ${e.message}")
+    println("Auth failed (not retryable): ${e.message}")
+} catch (e: OfflineQueueFullException) {
+    println("Queue full — reduce send rate")
 } catch (e: StreamlineException) {
     println("Streamline error: ${e.message}")
 }
+```
+
+### Retry Strategy
+
+The Kotlin SDK automatically retries failed sends with exponential backoff when `ProducerConfig.retries > 0` (default: 3). Configure retry behavior:
+
+```kotlin
+val client = StreamlineClient(
+    configuration = StreamlineConfiguration(url = "ws://localhost:9092"),
+)
+client.producerConfig = ProducerConfig(
+    retries = 5,             // Max retry attempts
+    retryBackoffMs = 200L,   // Base backoff (doubles each attempt)
+    compression = CompressionType.ZSTD,
+    batchSize = 32768,       // 32KB batches
+    lingerMs = 10L,          // 10ms batch window
+)
 ```
 
 ## Contributing

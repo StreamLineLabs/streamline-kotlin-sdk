@@ -6,14 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-- refactor: align DSL builder with Kotlin conventions (2026-03-05)
-
-- feat: add coroutine-based consumer API (2026-03-05)
-
-- fix: resolve suspend function cancellation handling (2026-03-06)
-
-- test: add flow-based consumption tests (2026-03-06)
 ## [Unreleased]
+
+### Added
+- Producer message batching with coroutine-based accumulator and configurable `batchSize`/`lingerMs`
+- Producer retry logic with exponential backoff via `sendWithRetry` suspend function
+- Compression type metadata included in WebSocket produce messages
+- `producerConfig` property on `StreamlineClient` for runtime batching/retry configuration
+- Expanded error handling documentation in README with all 9 exception types
+- CODEOWNERS file for review assignment
+
+### Changed
+- refactor: align DSL builder with Kotlin conventions (2026-03-05)
+- feat: add coroutine-based consumer API (2026-03-05)
+- fix: resolve suspend function cancellation handling (2026-03-06)
+- test: add flow-based consumption tests (2026-03-06)
 
 ## [0.2.0] - 2026-02-28
 
