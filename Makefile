@@ -36,3 +36,4 @@ integration-test: ## Run integration tests (requires Docker)
 	done
 	./gradlew test -Dintegration=true || true
 	docker compose -f docker-compose.test.yml down -v
+
