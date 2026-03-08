@@ -56,3 +56,5 @@ publishing {
         }
     }
 }
+
+// v0.3.0: Updated build configuration
