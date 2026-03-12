@@ -48,8 +48,10 @@ data class StreamlineMessage(
     val topic: String,
     val key: String? = null,
     val value: String,
+    val partition: Int? = null,
     val offset: Long? = null,
     val timestamp: Long? = null,
+    val headers: Map<String, String> = emptyMap(),
 )
 
 // -- Topic Info --
@@ -134,20 +136,204 @@ data class ServerInfo(
     val messageCount: Long = 0,
 )
 
+// -- Error Codes --
+
+/** Programmatic classification of Streamline SDK errors. */
+enum class ErrorCode {
+    CONNECTION,
+    TIMEOUT,
+    AUTHENTICATION,
+    AUTHORIZATION,
+    TOPIC_NOT_FOUND,
+    PARTITION_NOT_FOUND,
+    PROTOCOL,
+    SERIALIZATION,
+    SCHEMA,
+    CONFIGURATION,
+    INTERNAL,
+    CIRCUIT_OPEN;
+
+    /** Whether errors of this code are generally safe to retry. */
+    val defaultRetryable: Boolean
+        get() = when (this) {
+            CONNECTION, TIMEOUT, INTERNAL -> true
+            AUTHENTICATION, AUTHORIZATION, TOPIC_NOT_FOUND, PARTITION_NOT_FOUND,
+            PROTOCOL, SERIALIZATION, SCHEMA, CONFIGURATION, CIRCUIT_OPEN -> false
+        }
+}
+
 // -- Errors --
 
 /** Base exception for all Streamline SDK errors. */
-open class StreamlineException(message: String, cause: Throwable? = null) : Exception(message, cause)
+open class StreamlineException(
+    message: String,
+    cause: Throwable? = null,
+    val errorCode: ErrorCode = ErrorCode.INTERNAL,
+    val retryable: Boolean = errorCode.defaultRetryable,
+    val hint: String? = null,
+) : Exception(message, cause) {
+    /** Returns whether this error is safe to retry. */
+    fun isRetryable(): Boolean = retryable
+}
 
-class NotConnectedException : StreamlineException("Client is not connected")
-class ConnectionFailedException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class AuthenticationFailedException(message: String) : StreamlineException(message)
-class StreamlineTimeoutException : StreamlineException("Operation timed out")
-class TopicNotFoundException(topic: String) : StreamlineException("Topic not found: $topic")
-class OfflineQueueFullException : StreamlineException("Offline queue is full")
-class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class QueryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
-class SchemaRegistryException(message: String, cause: Throwable? = null) : StreamlineException(message, cause)
+class NotConnectedException : StreamlineException(
+    message = "Client is not connected",
+    errorCode = ErrorCode.CONNECTION,
+    hint = "Call connect() before performing operations",
+)
+
+class ConnectionFailedException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.CONNECTION,
+    hint = "Check that the server is running and the URL is correct",
+)
+
+class AuthenticationFailedException(message: String) : StreamlineException(
+    message = message,
+    errorCode = ErrorCode.AUTHENTICATION,
+    hint = "Verify your auth token or SASL credentials",
+)
+
+class AuthorizationFailedException(message: String) : StreamlineException(
+    message = message,
+    errorCode = ErrorCode.AUTHORIZATION,
+    hint = "Ensure the authenticated user has the required permissions",
+)
+
+class StreamlineTimeoutException(message: String = "Operation timed out") : StreamlineException(
+    message = message,
+    errorCode = ErrorCode.TIMEOUT,
+    hint = "Increase timeoutMs or check server responsiveness",
+)
+
+class TopicNotFoundException(topic: String) : StreamlineException(
+    message = "Topic not found: $topic",
+    errorCode = ErrorCode.TOPIC_NOT_FOUND,
+    hint = "Create the topic first or check the topic name",
+)
+
+class PartitionNotFoundException(topic: String, partition: Int) : StreamlineException(
+    message = "Partition $partition not found for topic: $topic",
+    errorCode = ErrorCode.PARTITION_NOT_FOUND,
+    hint = "Verify the partition number is within the topic's partition count",
+)
+
+class ProtocolException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.PROTOCOL,
+    hint = "This may indicate a version mismatch between SDK and server",
+)
+
+class SerializationException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.SERIALIZATION,
+    hint = "Check that the message format matches the expected schema",
+)
+
+class OfflineQueueFullException : StreamlineException(
+    message = "Offline queue is full",
+    errorCode = ErrorCode.INTERNAL,
+    retryable = false,
+    hint = "Wait for the connection to be restored or increase queue capacity",
+)
+
+class AdminOperationException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.INTERNAL,
+)
+
+class QueryException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.INTERNAL,
+)
+
+class SchemaRegistryException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.SCHEMA,
+)
+
+class CircuitOpenException(message: String = "Circuit breaker is open") : StreamlineException(
+    message = message,
+    errorCode = ErrorCode.CIRCUIT_OPEN,
+    retryable = false,
+    hint = "The circuit breaker has tripped; wait for the open timeout before retrying",
+)
+
+class ConfigurationException(message: String) : StreamlineException(
+    message = message,
+    errorCode = ErrorCode.CONFIGURATION,
+    hint = "Review the SDK configuration values",
+)
+
+// -- Cluster Info --
+
+/** Information about the Streamline cluster. */
+@Serializable
+data class ClusterInfo(
+    val clusterId: String = "",
+    val brokerId: Int = 0,
+    val brokers: List<BrokerInfo> = emptyList(),
+    val controller: Int = -1,
+)
+
+/** Information about a single broker in the cluster. */
+@Serializable
+data class BrokerInfo(
+    val id: Int = 0,
+    val host: String = "",
+    val port: Int = 9092,
+    val rack: String? = null,
+)
+
+// -- Consumer Lag --
+
+/** Consumer group lag information for a topic partition. */
+@Serializable
+data class ConsumerLag(
+    val topic: String,
+    val partition: Int = 0,
+    val currentOffset: Long = 0,
+    val endOffset: Long = 0,
+    val lag: Long = 0,
+)
+
+/** Aggregated consumer group lag across all subscribed partitions. */
+@Serializable
+data class ConsumerGroupLag(
+    val groupId: String,
+    val partitions: List<ConsumerLag> = emptyList(),
+    val totalLag: Long = 0,
+)
+
+// -- Message Inspection --
+
+/** A message returned by the message inspection API. */
+@Serializable
+data class InspectedMessage(
+    val offset: Long,
+    val key: String? = null,
+    val value: String = "",
+    val timestamp: Long = 0,
+    val partition: Int = 0,
+    val headers: Map<String, String> = emptyMap(),
+)
+
+// -- Metrics --
+
+/** A single metric data point from the server. */
+@Serializable
+data class MetricPoint(
+    val name: String = "",
+    val value: Double = 0.0,
+    val labels: Map<String, String> = emptyMap(),
+    val timestamp: Long = 0,
+)
 
 // -- Schema Registry --
 
@@ -164,15 +350,47 @@ data class SchemaInfo(
     val schema: String,
 )
 
-
-/**
- * Strategy for resetting consumer offsets when no valid offset is found.
- */
-enum class OffsetResetStrategy {
-    /** Start consuming from the earliest available offset. */
-    EARLIEST,
-    /** Start consuming from the latest offset (new messages only). */
-    LATEST,
-    /** Throw an exception if no valid offset is found. */
-    NONE
+/** Schema compatibility enforcement levels. */
+enum class CompatibilityLevel {
+    BACKWARD,
+    FORWARD,
+    FULL,
+    NONE,
+    BACKWARD_TRANSITIVE,
+    FORWARD_TRANSITIVE,
+    FULL_TRANSITIVE,
 }
+
+// -- ACL --
+
+/** ACL resource types that can be secured. */
+enum class AclResourceType { TOPIC, GROUP, CLUSTER, TRANSACTIONAL_ID }
+
+/** ACL permission types. */
+enum class AclPermission { ALLOW, DENY }
+
+/** ACL operation types. */
+enum class AclOperation { READ, WRITE, CREATE, DELETE, ALTER, DESCRIBE, ALL }
+
+/** An Access Control List entry. */
+@Serializable
+data class AclEntry(
+    val principal: String,
+    val resourceType: String,
+    val resourceName: String,
+    val operation: String,
+    val permission: String,
+    val host: String = "*",
+)
+
+// -- Partition Reassignment --
+
+/** Status of an in-progress partition reassignment. */
+@Serializable
+data class ReassignmentStatus(
+    val topic: String,
+    val partition: Int,
+    val replicas: List<Int> = emptyList(),
+    val addingReplicas: List<Int> = emptyList(),
+    val removingReplicas: List<Int> = emptyList(),
+)

@@ -37,6 +37,7 @@ import kotlinx.serialization.json.put
 class AdminClient(
     private val baseUrl: String,
     private val authToken: String? = null,
+    private val auth: AuthConfig? = null,
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
@@ -199,13 +200,358 @@ class AdminClient(
         httpClient.close()
     }
 
+    // -- Cluster Operations --
+
+    /** Get cluster overview including broker list and controller info. */
+    suspend fun clusterInfo(): ClusterInfo {
+        val response = request(HttpMethod.Get, "/v1/cluster")
+        val obj = json.parseToJsonElement(response).jsonObject
+        val brokers = obj["brokers"]?.jsonArray?.map { b ->
+            val bo = b.jsonObject
+            BrokerInfo(
+                id = bo["id"]?.jsonPrimitive?.int ?: 0,
+                host = bo["host"]?.jsonPrimitive?.content ?: "",
+                port = bo["port"]?.jsonPrimitive?.int ?: 9092,
+                rack = bo["rack"]?.jsonPrimitive?.content,
+            )
+        } ?: emptyList()
+        return ClusterInfo(
+            clusterId = obj["cluster_id"]?.jsonPrimitive?.content ?: "",
+            brokerId = obj["broker_id"]?.jsonPrimitive?.int ?: 0,
+            brokers = brokers,
+            controller = obj["controller"]?.jsonPrimitive?.int ?: -1,
+        )
+    }
+
+    /** List all brokers in the cluster. */
+    suspend fun listBrokers(): List<BrokerInfo> {
+        return clusterInfo().brokers
+    }
+
+    // -- Consumer Group Lag --
+
+    /** Get consumer lag for a specific consumer group. */
+    suspend fun consumerGroupLag(groupId: String): ConsumerGroupLag {
+        val response = request(HttpMethod.Get, "/v1/consumer-groups/$groupId/lag")
+        val obj = json.parseToJsonElement(response).jsonObject
+        val partitions = obj["partitions"]?.jsonArray?.map { p ->
+            val po = p.jsonObject
+            ConsumerLag(
+                topic = po["topic"]?.jsonPrimitive?.content ?: "",
+                partition = po["partition"]?.jsonPrimitive?.int ?: 0,
+                currentOffset = po["current_offset"]?.jsonPrimitive?.long ?: 0,
+                endOffset = po["end_offset"]?.jsonPrimitive?.long ?: 0,
+                lag = po["lag"]?.jsonPrimitive?.long ?: 0,
+            )
+        } ?: emptyList()
+        return ConsumerGroupLag(
+            groupId = obj["group_id"]?.jsonPrimitive?.content ?: groupId,
+            partitions = partitions,
+            totalLag = obj["total_lag"]?.jsonPrimitive?.long ?: partitions.sumOf { it.lag },
+        )
+    }
+
+    /** Get consumer lag for a specific topic within a consumer group. */
+    suspend fun consumerGroupTopicLag(groupId: String, topic: String): ConsumerGroupLag {
+        val response = request(HttpMethod.Get, "/v1/consumer-groups/$groupId/lag/$topic")
+        val obj = json.parseToJsonElement(response).jsonObject
+        val partitions = obj["partitions"]?.jsonArray?.map { p ->
+            val po = p.jsonObject
+            ConsumerLag(
+                topic = po["topic"]?.jsonPrimitive?.content ?: topic,
+                partition = po["partition"]?.jsonPrimitive?.int ?: 0,
+                currentOffset = po["current_offset"]?.jsonPrimitive?.long ?: 0,
+                endOffset = po["end_offset"]?.jsonPrimitive?.long ?: 0,
+                lag = po["lag"]?.jsonPrimitive?.long ?: 0,
+            )
+        } ?: emptyList()
+        return ConsumerGroupLag(
+            groupId = obj["group_id"]?.jsonPrimitive?.content ?: groupId,
+            partitions = partitions,
+            totalLag = obj["total_lag"]?.jsonPrimitive?.long ?: partitions.sumOf { it.lag },
+        )
+    }
+
+    /** Reset consumer group offsets (dry run — returns what would change). */
+    suspend fun resetOffsetsDryRun(
+        groupId: String,
+        topic: String,
+        strategy: String = "earliest",
+    ): List<ConsumerLag> {
+        val body = buildJsonObject {
+            put("topic", topic)
+            put("strategy", strategy)
+        }
+        val response = request(
+            HttpMethod.Post,
+            "/v1/consumer-groups/$groupId/reset-offsets/dry-run",
+            json.encodeToString(JsonObject.serializer(), body),
+        )
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { p ->
+            val po = p.jsonObject
+            ConsumerLag(
+                topic = po["topic"]?.jsonPrimitive?.content ?: topic,
+                partition = po["partition"]?.jsonPrimitive?.int ?: 0,
+                currentOffset = po["current_offset"]?.jsonPrimitive?.long ?: 0,
+                endOffset = po["end_offset"]?.jsonPrimitive?.long ?: 0,
+                lag = po["lag"]?.jsonPrimitive?.long ?: 0,
+            )
+        }
+    }
+
+    /** Reset consumer group offsets (executes the reset). */
+    suspend fun resetOffsets(
+        groupId: String,
+        topic: String,
+        strategy: String = "earliest",
+    ) {
+        val body = buildJsonObject {
+            put("topic", topic)
+            put("strategy", strategy)
+        }
+        request(
+            HttpMethod.Post,
+            "/v1/consumer-groups/$groupId/reset-offsets",
+            json.encodeToString(JsonObject.serializer(), body),
+        )
+    }
+
+    // -- Message Inspection --
+
+    // -- ACL Management --
+
+    /** List all ACL entries, optionally filtered by resource type. */
+    suspend fun listAcls(resourceType: AclResourceType? = null): List<AclEntry> {
+        val path = if (resourceType != null) {
+            "/v1/acls?resourceType=${resourceType.name.lowercase()}"
+        } else {
+            "/v1/acls"
+        }
+        val response = request(HttpMethod.Get, path)
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { e ->
+            val obj = e.jsonObject
+            AclEntry(
+                principal = obj["principal"]?.jsonPrimitive?.content ?: "",
+                resourceType = obj["resource_type"]?.jsonPrimitive?.content ?: "",
+                resourceName = obj["resource_name"]?.jsonPrimitive?.content ?: "",
+                operation = obj["operation"]?.jsonPrimitive?.content ?: "",
+                permission = obj["permission"]?.jsonPrimitive?.content ?: "",
+                host = obj["host"]?.jsonPrimitive?.content ?: "*",
+            )
+        }
+    }
+
+    /** Create a new ACL entry. */
+    suspend fun createAcl(
+        principal: String,
+        resourceType: AclResourceType,
+        resourceName: String,
+        operation: AclOperation,
+        permission: AclPermission = AclPermission.ALLOW,
+        host: String = "*",
+    ) {
+        val body = buildJsonObject {
+            put("principal", principal)
+            put("resource_type", resourceType.name.lowercase())
+            put("resource_name", resourceName)
+            put("operation", operation.name.lowercase())
+            put("permission", permission.name.lowercase())
+            put("host", host)
+        }
+        request(HttpMethod.Post, "/v1/acls", json.encodeToString(JsonObject.serializer(), body))
+    }
+
+    /** Delete ACL entries matching the given filter criteria. */
+    suspend fun deleteAcl(
+        principal: String,
+        resourceType: AclResourceType,
+        resourceName: String,
+        operation: AclOperation,
+    ) {
+        val params = "?principal=$principal&resource_type=${resourceType.name.lowercase()}" +
+            "&resource_name=$resourceName&operation=${operation.name.lowercase()}"
+        request(HttpMethod.Delete, "/v1/acls$params")
+    }
+
+    // -- Message Inspection (continued) --
+
+    /** Browse messages from a topic partition. */
+    suspend fun inspectMessages(
+        topic: String,
+        partition: Int = 0,
+        offset: Long? = null,
+        limit: Int = 20,
+    ): List<InspectedMessage> {
+        val params = buildString {
+            append("?partition=$partition&limit=$limit")
+            if (offset != null) append("&offset=$offset")
+        }
+        val response = request(HttpMethod.Get, "/v1/inspect/$topic$params")
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { m ->
+            val mo = m.jsonObject
+            val headers = mo["headers"]?.jsonObject
+                ?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap()
+            InspectedMessage(
+                offset = mo["offset"]?.jsonPrimitive?.long ?: 0,
+                key = mo["key"]?.jsonPrimitive?.content,
+                value = mo["value"]?.jsonPrimitive?.content ?: "",
+                timestamp = mo["timestamp"]?.jsonPrimitive?.long ?: 0,
+                partition = mo["partition"]?.jsonPrimitive?.int ?: partition,
+                headers = headers,
+            )
+        }
+    }
+
+    /** Get the latest messages from a topic. */
+    suspend fun latestMessages(topic: String, count: Int = 10): List<InspectedMessage> {
+        val response = request(HttpMethod.Get, "/v1/inspect/$topic/latest?count=$count")
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { m ->
+            val mo = m.jsonObject
+            InspectedMessage(
+                offset = mo["offset"]?.jsonPrimitive?.long ?: 0,
+                key = mo["key"]?.jsonPrimitive?.content,
+                value = mo["value"]?.jsonPrimitive?.content ?: "",
+                timestamp = mo["timestamp"]?.jsonPrimitive?.long ?: 0,
+                partition = mo["partition"]?.jsonPrimitive?.int ?: 0,
+                headers = mo["headers"]?.jsonObject
+                    ?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap(),
+            )
+        }
+    }
+
+    // -- Metrics --
+
+    /** Get metrics history from the server. */
+    suspend fun metricsHistory(): List<MetricPoint> {
+        val response = request(HttpMethod.Get, "/v1/metrics/history")
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { m ->
+            val mo = m.jsonObject
+            MetricPoint(
+                name = mo["name"]?.jsonPrimitive?.content ?: "",
+                value = mo["value"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: 0.0,
+                labels = mo["labels"]?.jsonObject
+                    ?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap(),
+                timestamp = mo["timestamp"]?.jsonPrimitive?.long ?: 0,
+            )
+        }
+    }
+
+    // -- HTTP Offset Management --
+
+    /**
+     * Commit consumer offsets via HTTP REST API.
+     *
+     * @param groupId Consumer group identifier.
+     * @param offsets Map of "topic:partition" to offset values to commit.
+     */
+    suspend fun commitOffsets(groupId: String, offsets: Map<String, Long>) {
+        val entries = offsets.entries.map { (tp, offset) ->
+            val parts = tp.split(":")
+            buildJsonObject {
+                put("topic", parts.getOrElse(0) { tp })
+                put("partition", parts.getOrElse(1) { "0" }.toIntOrNull() ?: 0)
+                put("offset", offset)
+            }
+        }
+        val body = buildJsonObject {
+            put("offsets", JsonArray(entries))
+        }
+        request(
+            HttpMethod.Post,
+            "/v1/consumer-groups/$groupId/offsets",
+            json.encodeToString(JsonObject.serializer(), body),
+        )
+    }
+
+    /**
+     * Fetch committed offsets for a consumer group via HTTP REST API.
+     *
+     * @param groupId Consumer group identifier.
+     * @param topic Optional topic filter. If null, returns offsets for all topics.
+     * @return Map of "topic:partition" to committed offset.
+     */
+    suspend fun getOffsets(groupId: String, topic: String? = null): Map<String, Long> {
+        val path = if (topic != null) {
+            "/v1/consumer-groups/$groupId/offsets?topic=$topic"
+        } else {
+            "/v1/consumer-groups/$groupId/offsets"
+        }
+        val response = request(HttpMethod.Get, path)
+        val arr = json.parseToJsonElement(response).jsonArray
+        val result = mutableMapOf<String, Long>()
+        for (element in arr) {
+            val obj = element.jsonObject
+            val t = obj["topic"]?.jsonPrimitive?.content ?: continue
+            val p = obj["partition"]?.jsonPrimitive?.int ?: 0
+            val o = obj["offset"]?.jsonPrimitive?.long ?: continue
+            result["$t:$p"] = o
+        }
+        return result
+    }
+
+    // -- Partition Reassignment --
+
+    /**
+     * Reassign partitions to specific brokers.
+     *
+     * @param assignments Map of "topic:partition" to list of broker IDs.
+     */
+    suspend fun reassignPartitions(assignments: Map<String, List<Int>>) {
+        val entries = assignments.entries.map { (tp, brokers) ->
+            val parts = tp.split(":")
+            buildJsonObject {
+                put("topic", parts.getOrElse(0) { tp })
+                put("partition", parts.getOrElse(1) { "0" }.toIntOrNull() ?: 0)
+                put("replicas", JsonArray(brokers.map { JsonPrimitive(it) }))
+            }
+        }
+        val body = buildJsonObject {
+            put("reassignments", JsonArray(entries))
+        }
+        request(
+            HttpMethod.Post,
+            "/v1/partitions/reassign",
+            json.encodeToString(JsonObject.serializer(), body),
+        )
+    }
+
+    /**
+     * List in-progress partition reassignments.
+     *
+     * @return List of reassignment status entries.
+     */
+    suspend fun listReassignments(): List<ReassignmentStatus> {
+        val response = request(HttpMethod.Get, "/v1/partitions/reassignments")
+        val arr = json.parseToJsonElement(response).jsonArray
+        return arr.map { element ->
+            val obj = element.jsonObject
+            ReassignmentStatus(
+                topic = obj["topic"]?.jsonPrimitive?.content ?: "",
+                partition = obj["partition"]?.jsonPrimitive?.int ?: 0,
+                replicas = obj["replicas"]?.jsonArray?.map { it.jsonPrimitive.int } ?: emptyList(),
+                addingReplicas = obj["adding_replicas"]?.jsonArray?.map { it.jsonPrimitive.int } ?: emptyList(),
+                removingReplicas = obj["removing_replicas"]?.jsonArray?.map { it.jsonPrimitive.int } ?: emptyList(),
+            )
+        }
+    }
+
     // -- Internal HTTP --
 
     private suspend fun request(method: HttpMethod, path: String, body: String? = null): String {
         try {
             val response: HttpResponse = httpClient.request("$baseUrl$path") {
                 this.method = method
-                authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                // Apply auth: prefer AuthConfig, fall back to legacy authToken
+                if (auth != null) {
+                    applyAuth(auth)
+                } else {
+                    authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body)

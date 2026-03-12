@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Producer retry logic with exponential backoff via `sendWithRetry` suspend function
 - Compression type metadata included in WebSocket produce messages
 - `producerConfig` property on `StreamlineClient` for runtime batching/retry configuration
+- Circuit breaker pattern (`CircuitBreaker`) with configurable failure/success thresholds
+- `ErrorCode` enum with `retryable` flag and `hint` on all exception types
+- Consumer offset management: `commitOffsets`, `seekToOffset`, `seekToBeginning`, `seekToEnd`, `position`, `committed`
+- AdminClient: cluster info via `clusterInfo()` and `listBrokers()`
+- AdminClient: consumer group lag monitoring via `consumerGroupLag()` and `consumerGroupTopicLag()`
+- AdminClient: offset reset via `resetOffsets()` and `resetOffsetsDryRun()`
+- AdminClient: message inspection via `inspectMessages()` and `latestMessages()`
+- AdminClient: server metrics via `metricsHistory()`
+- Model types: `ClusterInfo`, `BrokerInfo`, `ConsumerLag`, `ConsumerGroupLag`, `InspectedMessage`, `MetricPoint`
+- Tests for all new AdminClient methods (mock-engine based)
 - Expanded error handling documentation in README with all 9 exception types
 - CODEOWNERS file for review assignment
 

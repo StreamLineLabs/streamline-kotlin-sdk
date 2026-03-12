@@ -1,4 +1,4 @@
-> ⚠️ **Community-Maintained SDK** — This SDK is in Alpha quality and maintained by the community. For production use, consider the [Java SDK](https://github.com/streamlinelabs/streamline-java-sdk) which provides full feature parity with Spring Boot integration. Contributions welcome!
+> 🟢 **Beta SDK** — This SDK is feature-complete with tests and CI. For production JVM use requiring Spring Boot integration, also see the [Java SDK](https://github.com/streamlinelabs/streamline-java-sdk). Contributions welcome!
 
 # Streamline Kotlin SDK
 
@@ -86,6 +86,42 @@ result.rows.forEach { row -> println(row) }
 // Server info
 val info = admin.serverInfo()
 println("Version: ${info.version}, Topics: ${info.topicCount}")
+
+admin.close()
+```
+
+### Cluster & Monitoring
+
+```kotlin
+val admin = AdminClient("http://localhost:9094")
+
+// Cluster overview
+val cluster = admin.clusterInfo()
+println("Cluster: ${cluster.clusterId}, Brokers: ${cluster.brokers.size}")
+cluster.brokers.forEach { b -> println("  ${b.host}:${b.port} (rack=${b.rack})") }
+
+// Consumer group lag monitoring
+val lag = admin.consumerGroupLag("my-group")
+println("Total lag: ${lag.totalLag}")
+lag.partitions.forEach { p -> println("  ${p.topic}:${p.partition} lag=${p.lag}") }
+
+// Topic-scoped lag
+val topicLag = admin.consumerGroupTopicLag("my-group", "events")
+
+// Message inspection
+val messages = admin.inspectMessages("events", partition = 0, limit = 10)
+messages.forEach { m -> println("offset=${m.offset} key=${m.key} value=${m.value}") }
+
+// Latest messages
+val latest = admin.latestMessages("events", count = 5)
+
+// Server metrics
+val metrics = admin.metricsHistory()
+metrics.forEach { m -> println("${m.name}=${m.value} ${m.labels}") }
+
+// Offset management
+val dryRun = admin.resetOffsetsDryRun("my-group", "events", "earliest")
+admin.resetOffsets("my-group", "events", "earliest")
 
 admin.close()
 ```
@@ -279,6 +315,35 @@ client.producerConfig = ProducerConfig(
     lingerMs = 10L,          // 10ms batch window
 )
 ```
+
+## Circuit Breaker
+
+Protect your application from cascading failures when the Streamline server is unresponsive:
+
+```kotlin
+import io.streamline.sdk.CircuitBreaker
+import io.streamline.sdk.CircuitBreakerConfig
+import io.streamline.sdk.CircuitState
+
+val breaker = CircuitBreaker(CircuitBreakerConfig(
+    failureThreshold = 5,        // Open after 5 consecutive failures
+    successThreshold = 2,        // Close after 2 half-open successes
+    openTimeoutMs = 30_000L,     // 30s before probing
+    onStateChange = { from, to -> println("Circuit: $from → $to") },
+))
+
+// Wrap a suspending operation
+val result = breaker.execute {
+    client.produce("events", value = """{"action":"click"}""")
+}
+
+// Or check state manually
+if (breaker.state == CircuitState.OPEN) {
+    println("Circuit is open — requests will be rejected")
+}
+```
+
+When the circuit is open, `execute` throws a retryable `StreamlineException`. See the [Circuit Breaker guide](https://streamlinelabs.dev/docs/features/circuit-breaker) for details.
 
 ## Contributing
 

@@ -3,6 +3,7 @@ package io.streamline.sdk
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.test.runTest
@@ -15,7 +16,7 @@ import kotlin.test.assertTrue
 
 class SchemaRegistryClientTest {
 
-    private fun mockClient(handler: MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpClient {
+    private fun mockClient(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpClient {
         return HttpClient(MockEngine) {
             engine {
                 addHandler { request -> handler(request) }
@@ -119,7 +120,7 @@ class SchemaRegistryClientTest {
     }
 
     @Test
-    fun `getSchemaVersion returns specific version`() = runTest {
+    fun `getSchema returns specific version`() = runTest {
         val http = mockClient { request ->
             assertEquals(HttpMethod.Get, request.method)
             assertTrue(request.url.encodedPath.endsWith("/subjects/events-value/versions/2"))
@@ -136,7 +137,7 @@ class SchemaRegistryClientTest {
         }
 
         val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
-        val info = registry.getSchemaVersion("events-value", 2)
+        val info = registry.getSchema("events-value", 2)
 
         assertEquals("events-value", info.subject)
         assertEquals(10, info.id)
@@ -166,6 +167,85 @@ class SchemaRegistryClientTest {
 
         assertEquals(42, info.id)
         assertEquals("events-value", info.subject)
+        registry.close()
+    }
+
+    // -- Schema Caching --
+
+    @Test
+    fun `getSchema caches result and returns cached on second call`() = runTest {
+        var requestCount = 0
+        val http = mockClient { _ ->
+            requestCount++
+            respond(
+                content = """{
+                    "subject":"events-value",
+                    "id":10,
+                    "version":2,
+                    "schemaType":"AVRO",
+                    "schema":"{\"type\":\"record\"}"
+                }""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        val first = registry.getSchema("events-value", 2)
+        val second = registry.getSchema("events-value", 2)
+
+        assertEquals(first, second)
+        assertEquals(1, requestCount)
+        registry.close()
+    }
+
+    @Test
+    fun `getSchemaById caches result`() = runTest {
+        var requestCount = 0
+        val http = mockClient { _ ->
+            requestCount++
+            respond(
+                content = """{
+                    "subject":"events-value",
+                    "id":42,
+                    "version":1,
+                    "schemaType":"AVRO",
+                    "schema":"{\"type\":\"string\"}"
+                }""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        registry.getSchemaById(42)
+        registry.getSchemaById(42)
+
+        assertEquals(1, requestCount)
+        registry.close()
+    }
+
+    @Test
+    fun `clearCache forces refetch`() = runTest {
+        var requestCount = 0
+        val http = mockClient { _ ->
+            requestCount++
+            respond(
+                content = """{
+                    "subject":"events-value",
+                    "id":10,
+                    "version":2,
+                    "schemaType":"AVRO",
+                    "schema":"{\"type\":\"record\"}"
+                }""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        registry.getSchema("events-value", 2)
+        registry.clearCache()
+        registry.getSchema("events-value", 2)
+
+        assertEquals(2, requestCount)
         registry.close()
     }
 
@@ -282,6 +362,64 @@ class SchemaRegistryClientTest {
         registry.close()
     }
 
+    // -- Compatibility Level --
+
+    @Test
+    fun `getCompatibilityLevel returns level`() = runTest {
+        val http = mockClient { request ->
+            assertEquals(HttpMethod.Get, request.method)
+            assertTrue(request.url.encodedPath.endsWith("/config/events-value"))
+            respond(
+                content = """{"compatibilityLevel":"BACKWARD"}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        val level = registry.getCompatibilityLevel("events-value")
+
+        assertEquals(CompatibilityLevel.BACKWARD, level)
+        registry.close()
+    }
+
+    @Test
+    fun `getCompatibilityLevel returns transitive level`() = runTest {
+        val http = mockClient {
+            respond(
+                content = """{"compatibilityLevel":"FULL_TRANSITIVE"}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        val level = registry.getCompatibilityLevel("events-value")
+
+        assertEquals(CompatibilityLevel.FULL_TRANSITIVE, level)
+        registry.close()
+    }
+
+    @Test
+    fun `setCompatibilityLevel sends PUT request`() = runTest {
+        var capturedBody = ""
+        var capturedMethod: HttpMethod? = null
+        val http = mockClient { request ->
+            capturedMethod = request.method
+            assertTrue(request.url.encodedPath.endsWith("/config/events-value"))
+            capturedBody = String(request.body.toByteArray())
+            respond(
+                content = """{"compatibility":"FULL"}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
+        registry.setCompatibilityLevel("events-value", CompatibilityLevel.FULL)
+
+        assertEquals(HttpMethod.Put, capturedMethod)
+        assertTrue(capturedBody.contains("\"compatibility\":\"FULL\""))
+        registry.close()
+    }
+
     // -- Error Handling --
 
     @Test
@@ -341,8 +479,9 @@ class SchemaRegistryClientTest {
 
     @Test
     fun `auth token is sent in header`() = runTest {
+        var capturedAuth: String? = null
         val http = mockClient { request ->
-            assertEquals("Bearer my-secret-token", request.headers[HttpHeaders.Authorization])
+            capturedAuth = request.headers[HttpHeaders.Authorization]
             respond(
                 content = "[]",
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -351,13 +490,15 @@ class SchemaRegistryClientTest {
 
         val registry = SchemaRegistryClient("http://localhost:9094", authToken = "my-secret-token", httpClient = http)
         registry.listSubjects()
+        assertEquals("Bearer my-secret-token", capturedAuth)
         registry.close()
     }
 
     @Test
     fun `no auth header when token is null`() = runTest {
+        var capturedAuth: String? = "should-be-null"
         val http = mockClient { request ->
-            assertEquals(null, request.headers[HttpHeaders.Authorization])
+            capturedAuth = request.headers[HttpHeaders.Authorization]
             respond(
                 content = "[]",
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -366,6 +507,74 @@ class SchemaRegistryClientTest {
 
         val registry = SchemaRegistryClient("http://localhost:9094", httpClient = http)
         registry.listSubjects()
+        assertEquals(null, capturedAuth)
+        registry.close()
+    }
+
+    // -- AuthConfig support --
+
+    @Test
+    fun `PlainAuth sends Basic header`() = runTest {
+        var capturedAuth: String? = null
+        val http = mockClient { request ->
+            capturedAuth = request.headers[HttpHeaders.Authorization]
+            respond(
+                content = "[]",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient(
+            "http://localhost:9094",
+            auth = AuthConfig.PlainAuth("user", "pass"),
+            httpClient = http,
+        )
+        registry.listSubjects()
+        assertTrue(capturedAuth!!.startsWith("Basic "))
+        registry.close()
+    }
+
+    @Test
+    fun `ScramAuth sends SCRAM header`() = runTest {
+        var capturedAuth: String? = null
+        val http = mockClient { request ->
+            capturedAuth = request.headers[HttpHeaders.Authorization]
+            respond(
+                content = "[]",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient(
+            "http://localhost:9094",
+            auth = AuthConfig.ScramAuth("admin", "secret", ScramMechanism.SCRAM_SHA_512),
+            httpClient = http,
+        )
+        registry.listSubjects()
+        assertTrue(capturedAuth!!.startsWith("SCRAM SCRAM_SHA_512 "))
+        registry.close()
+    }
+
+    @Test
+    fun `OAuthBearerAuth sends Bearer header`() = runTest {
+        var capturedAuth: String? = null
+        val http = mockClient { request ->
+            capturedAuth = request.headers[HttpHeaders.Authorization]
+            respond(
+                content = "[]",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val registry = SchemaRegistryClient(
+            "http://localhost:9094",
+            auth = AuthConfig.OAuthBearerAuth {
+                OAuthToken("my-oauth-token", System.currentTimeMillis() + 3600_000)
+            },
+            httpClient = http,
+        )
+        registry.listSubjects()
+        assertEquals("Bearer my-oauth-token", capturedAuth)
         registry.close()
     }
 
@@ -388,8 +597,9 @@ class SchemaRegistryClientTest {
 
     @Test
     fun `client with custom base url`() = runTest {
+        var capturedUrl = ""
         val http = mockClient { request ->
-            assertTrue(request.url.toString().startsWith("http://schema-registry:8081"))
+            capturedUrl = request.url.toString()
             respond(
                 content = "[]",
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -398,6 +608,7 @@ class SchemaRegistryClientTest {
 
         val registry = SchemaRegistryClient("http://schema-registry:8081", httpClient = http)
         registry.listSubjects()
+        assertTrue(capturedUrl.startsWith("http://schema-registry:8081"))
         registry.close()
     }
 }

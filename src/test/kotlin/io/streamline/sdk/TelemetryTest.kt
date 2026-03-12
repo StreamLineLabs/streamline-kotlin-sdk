@@ -123,7 +123,7 @@ class TelemetryTest {
         val telemetry = recordingTelemetry(spans)
 
         val traced = TracedAdminClient(
-            delegate = object : AdminClient("http://localhost:9094") {},
+            delegate = AdminClient("http://localhost:9094"),
             telemetry = telemetry,
         )
         // TracedAdminClient wraps delegate; we verify span names are correct

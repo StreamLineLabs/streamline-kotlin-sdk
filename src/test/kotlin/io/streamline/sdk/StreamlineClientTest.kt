@@ -274,5 +274,139 @@ class StreamlineClientTest {
         assertEquals("invalid SQL", ex.message)
         assertNull(ex.cause)
     }
+
+    // -- Schema Pipeline --
+
+    @Test
+    fun `produceWithSchema throws when no schema registry configured`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalStateException> {
+            client.produceWithSchema("events", key = "k1", value = "{}")
+        }
+        client.close()
+    }
+
+    // -- Consumer Config --
+
+    @Test
+    fun `consumer config defaults`() {
+        val config = ConsumerConfig()
+        assertNull(config.groupId)
+        assertTrue(config.autoCommit)
+        assertEquals(5000L, config.autoCommitIntervalMs)
+        assertEquals(30000L, config.sessionTimeoutMs)
+        assertEquals(3000L, config.heartbeatIntervalMs)
+        assertEquals(500, config.maxPollRecords)
+        assertEquals(OffsetReset.LATEST, config.autoOffsetReset)
+    }
+
+    @Test
+    fun `consumer config custom values`() {
+        val config = ConsumerConfig(
+            groupId = "my-group",
+            autoCommit = false,
+            autoCommitIntervalMs = 10_000,
+            autoOffsetReset = OffsetReset.EARLIEST,
+            maxPollRecords = 100,
+        )
+        assertEquals("my-group", config.groupId)
+        assertFalse(config.autoCommit)
+        assertEquals(10_000L, config.autoCommitIntervalMs)
+        assertEquals(OffsetReset.EARLIEST, config.autoOffsetReset)
+        assertEquals(100, config.maxPollRecords)
+    }
+
+    // -- Producer Config --
+
+    @Test
+    fun `producer config defaults`() {
+        val config = ProducerConfig()
+        assertEquals(16384, config.batchSize)
+        assertEquals(0L, config.lingerMs)
+        assertEquals(CompressionType.NONE, config.compression)
+        assertEquals(3, config.retries)
+        assertEquals(100L, config.retryBackoffMs)
+        assertFalse(config.idempotent)
+        assertEquals(Acks.ONE, config.acks)
+    }
+
+    // -- ACL Models --
+
+    @Test
+    fun `acl entry data class`() {
+        val entry = AclEntry(
+            principal = "User:alice",
+            resourceType = "topic",
+            resourceName = "events",
+            operation = "read",
+            permission = "allow",
+            host = "10.0.0.1",
+        )
+        assertEquals("User:alice", entry.principal)
+        assertEquals("10.0.0.1", entry.host)
+    }
+
+    @Test
+    fun `acl entry default host is wildcard`() {
+        val entry = AclEntry(
+            principal = "User:bob",
+            resourceType = "group",
+            resourceName = "cg-1",
+            operation = "read",
+            permission = "allow",
+        )
+        assertEquals("*", entry.host)
+    }
+
+    @Test
+    fun `acl resource types`() {
+        val types = AclResourceType.entries
+        assertEquals(4, types.size)
+        assertTrue(types.contains(AclResourceType.TOPIC))
+        assertTrue(types.contains(AclResourceType.GROUP))
+        assertTrue(types.contains(AclResourceType.CLUSTER))
+        assertTrue(types.contains(AclResourceType.TRANSACTIONAL_ID))
+    }
+
+    @Test
+    fun `acl operations`() {
+        val ops = AclOperation.entries
+        assertEquals(7, ops.size)
+        assertTrue(ops.contains(AclOperation.READ))
+        assertTrue(ops.contains(AclOperation.WRITE))
+        assertTrue(ops.contains(AclOperation.ALL))
+    }
+
+    @Test
+    fun `acl permissions`() {
+        val perms = AclPermission.entries
+        assertEquals(2, perms.size)
+        assertTrue(perms.contains(AclPermission.ALLOW))
+        assertTrue(perms.contains(AclPermission.DENY))
+    }
+
+    // -- Message Metadata --
+
+    @Test
+    fun `message with partition and headers`() {
+        val msg = StreamlineMessage(
+            topic = "events",
+            key = "k1",
+            value = "v1",
+            partition = 2,
+            offset = 100,
+            timestamp = 1234567890L,
+            headers = mapOf("trace-id" to "abc-123"),
+        )
+        assertEquals(2, msg.partition)
+        assertEquals("abc-123", msg.headers["trace-id"])
+    }
+
+    @Test
+    fun `message defaults for new fields`() {
+        val msg = StreamlineMessage(topic = "t", value = "v")
+        assertNull(msg.partition)
+        assertTrue(msg.headers.isEmpty())
+    }
 }
 

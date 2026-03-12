@@ -17,7 +17,7 @@
 ### Consumer not receiving messages
 - Check consumer group ID — reusing a group that already consumed all messages
   will start from the latest offset by default
-- Use `OffsetResetStrategy.EARLIEST` to replay from the beginning
+- Use `OffsetReset.EARLIEST` in your `ConsumerConfig` to replay from the beginning
 
 ### Producer performance
 - Use batch producing for high-throughput scenarios

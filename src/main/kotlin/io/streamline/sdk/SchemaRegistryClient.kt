@@ -15,10 +15,14 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * HTTP-based client for the Streamline Schema Registry, which follows the
  * Confluent Schema Registry wire format.
+ *
+ * Supports schema caching to reduce redundant network calls and pluggable
+ * authentication via [AuthConfig].
  *
  * ```kotlin
  * val registry = SchemaRegistryClient("http://localhost:9094")
@@ -30,6 +34,7 @@ import kotlinx.serialization.json.put
 class SchemaRegistryClient(
     private val baseUrl: String,
     private val authToken: String? = null,
+    private val auth: AuthConfig? = null,
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
@@ -38,6 +43,12 @@ class SchemaRegistryClient(
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    /** Cache: "subject:version" -> SchemaInfo */
+    private val schemaCache = ConcurrentHashMap<String, SchemaInfo>()
+
+    /** Cache: schema ID -> SchemaInfo */
+    private val idCache = ConcurrentHashMap<Int, SchemaInfo>()
 
     // -- Schema Registration --
 
@@ -62,19 +73,40 @@ class SchemaRegistryClient(
     /** Get the latest schema registered under the given subject. */
     suspend fun getLatestSchema(subject: String): SchemaInfo {
         val response = request(HttpMethod.Get, "/subjects/$subject/versions/latest")
-        return parseSchemaInfo(response)
+        val info = parseSchemaInfo(response)
+        cacheSchema(info)
+        return info
     }
 
-    /** Get a specific version of a schema registered under the given subject. */
-    suspend fun getSchemaVersion(subject: String, version: Int): SchemaInfo {
+    /**
+     * Get a specific version of a schema registered under the given subject.
+     * Results are cached after the first successful fetch.
+     */
+    suspend fun getSchema(subject: String, version: Int): SchemaInfo {
+        val cacheKey = "$subject:$version"
+        schemaCache[cacheKey]?.let { return it }
+
         val response = request(HttpMethod.Get, "/subjects/$subject/versions/$version")
-        return parseSchemaInfo(response)
+        val info = parseSchemaInfo(response)
+        cacheSchema(info)
+        return info
     }
+
+    /**
+     * Get a specific version of a schema registered under the given subject.
+     * Alias for [getSchema].
+     */
+    suspend fun getSchemaVersion(subject: String, version: Int): SchemaInfo =
+        getSchema(subject, version)
 
     /** Get a schema by its globally unique ID. */
     suspend fun getSchemaById(id: Int): SchemaInfo {
+        idCache[id]?.let { return it }
+
         val response = request(HttpMethod.Get, "/schemas/ids/$id")
-        return parseSchemaInfo(response, fallbackId = id)
+        val info = parseSchemaInfo(response, fallbackId = id)
+        cacheSchema(info)
+        return info
     }
 
     // -- Subject Management --
@@ -91,9 +123,11 @@ class SchemaRegistryClient(
         return json.parseToJsonElement(response).jsonArray.map { it.jsonPrimitive.int }
     }
 
-    /** Delete a subject and all its associated schema versions. */
+    /** Delete a subject and all its associated schema versions. Evicts cached entries. */
     suspend fun deleteSubject(subject: String): List<Int> {
         val response = request(HttpMethod.Delete, "/subjects/$subject")
+        // Evict cache entries for this subject
+        schemaCache.keys.removeAll { it.startsWith("$subject:") }
         return json.parseToJsonElement(response).jsonArray.map { it.jsonPrimitive.int }
     }
 
@@ -119,12 +153,55 @@ class SchemaRegistryClient(
         return obj["is_compatible"]?.jsonPrimitive?.content?.toBoolean() ?: false
     }
 
+    /**
+     * Get the compatibility level configured for a subject.
+     * Falls back to the global default if no subject-level override exists.
+     */
+    suspend fun getCompatibilityLevel(subject: String): CompatibilityLevel {
+        val response = request(HttpMethod.Get, "/config/$subject")
+        val obj = json.parseToJsonElement(response).jsonObject
+        val level = obj["compatibilityLevel"]?.jsonPrimitive?.content
+            ?: throw SchemaRegistryException("Missing 'compatibilityLevel' in response")
+        return CompatibilityLevel.valueOf(level)
+    }
+
+    /**
+     * Set the compatibility level for a subject.
+     */
+    suspend fun setCompatibilityLevel(subject: String, level: CompatibilityLevel) {
+        val body = buildJsonObject {
+            put("compatibility", level.name)
+        }
+        request(
+            HttpMethod.Put,
+            "/config/$subject",
+            json.encodeToString(JsonObject.serializer(), body),
+        )
+    }
+
+    // -- Cache Management --
+
+    /** Clear all cached schema entries. */
+    fun clearCache() {
+        schemaCache.clear()
+        idCache.clear()
+    }
+
     /** Release HTTP client resources. */
     fun close() {
         httpClient.close()
     }
 
     // -- Internal --
+
+    private fun cacheSchema(info: SchemaInfo) {
+        if (info.subject.isNotEmpty() && info.version > 0) {
+            schemaCache["${info.subject}:${info.version}"] = info
+        }
+        if (info.id > 0) {
+            idCache[info.id] = info
+        }
+    }
 
     private fun parseSchemaInfo(responseBody: String, fallbackId: Int? = null): SchemaInfo {
         val obj = json.parseToJsonElement(responseBody).jsonObject
@@ -141,7 +218,12 @@ class SchemaRegistryClient(
         try {
             val response: HttpResponse = httpClient.request("$baseUrl$path") {
                 this.method = method
-                authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                // Apply auth: prefer AuthConfig, fall back to legacy authToken
+                if (auth != null) {
+                    applyAuth(auth)
+                } else {
+                    authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body)
