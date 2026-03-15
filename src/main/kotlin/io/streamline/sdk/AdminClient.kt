@@ -38,7 +38,9 @@ class AdminClient(
     private val baseUrl: String,
     private val authToken: String? = null,
     private val auth: AuthConfig? = null,
+    private val tls: TlsConfig? = null,
     private val httpClient: HttpClient = HttpClient(CIO) {
+        engine { configureTls(tls) }
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
         }

@@ -43,7 +43,10 @@ typealias MessageHandler = suspend (StreamlineMessage) -> Unit
 class StreamlineClient(
     private val configuration: StreamlineConfiguration,
     private val auth: AuthConfig? = null,
-    private val httpClient: HttpClient = HttpClient(CIO) { install(WebSockets) },
+    private val httpClient: HttpClient = HttpClient(CIO) {
+        engine { configureTls(configuration.tls) }
+        install(WebSockets)
+    },
     private val schemaRegistry: SchemaRegistryClient? = null,
 ) {
 
