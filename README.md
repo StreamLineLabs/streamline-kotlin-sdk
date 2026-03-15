@@ -62,6 +62,26 @@ client.disconnect()
 client.close()
 ```
 
+## Transactions
+
+```kotlin
+val client = StreamlineClient(config)
+client.connect()
+
+client.beginTransaction()
+try {
+    client.produce("orders", key = "k1", value = "v1")
+    client.produce("orders", key = "k2", value = "v2")
+    client.commitTransaction()
+} catch (e: Exception) {
+    client.abortTransaction()
+    throw e
+}
+```
+
+> **Note:** Transactions use client-side buffering. Messages are collected and sent as a batch
+> on commit, providing all-or-nothing delivery at the client level.
+
 ## Admin Client
 
 The `AdminClient` communicates with the Streamline HTTP REST API (port 9094) for topic management, consumer group inspection, and SQL queries.
