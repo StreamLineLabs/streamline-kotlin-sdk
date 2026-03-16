@@ -62,3 +62,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apache 2.0 license
 
 - feat: implement Flow-based consumer API for Coroutines
+- docs: update Kotlin Coroutines streaming integration guide
