@@ -65,3 +65,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: update Kotlin Coroutines streaming integration guide
 - fix: resolve coroutine scope leak on consumer close
 - test: verify consumer flow cancellation and backpressure
+- chore: bump Kotlin Coroutines dependency to 1.9.0
