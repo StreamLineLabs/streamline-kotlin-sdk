@@ -64,3 +64,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: implement Flow-based consumer API for Coroutines
 - docs: update Kotlin Coroutines streaming integration guide
 - fix: resolve coroutine scope leak on consumer close
+- test: verify consumer flow cancellation and backpressure
