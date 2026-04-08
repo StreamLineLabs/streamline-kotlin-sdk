@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `io.streamline.sdk.moonshot` package — Ktor + coroutines clients for the
+  Streamline Moonshot HTTP control plane (port `9094`): `BranchesClient`,
+  `ContractsClient`, `AttestationClient`, `SearchClient`, `MemoryClient`.
+- Shared `MoonshotOptions`, `MoonshotException`, and serializable DTOs
+  (`Branch`, `MergeReport`, `ContractValidationResult`, `Attestation`,
+  `SearchHit`, `MemoryRecord`, `MemoryKind`).
+
+### Added
 - Producer message batching with coroutine-based accumulator and configurable `batchSize`/`lingerMs`
 - Producer retry logic with exponential backoff via `sendWithRetry` suspend function
 - Compression type metadata included in WebSocket produce messages

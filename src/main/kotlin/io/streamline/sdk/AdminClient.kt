@@ -542,6 +542,26 @@ class AdminClient(
         }
     }
 
+    // -- Search --
+
+    /**
+     * Searches a topic using semantic search via the HTTP API.
+     *
+     * @param topic Topic to search.
+     * @param query Free-text search query.
+     * @param k Maximum number of results (default 10).
+     * @return List of search results ordered by descending score.
+     */
+    suspend fun search(topic: String, query: String, k: Int = 10): List<SearchResult> {
+        val payload = buildJsonObject {
+            put("query", query)
+            put("k", k)
+        }
+        val responseText = request(HttpMethod.Post, "/api/v1/topics/$topic/search", payload.toString())
+        val parsed = json.decodeFromString<SearchApiResponse>(responseText)
+        return parsed.hits
+    }
+
     // -- Internal HTTP --
 
     private suspend fun request(method: HttpMethod, path: String, body: String? = null): String {

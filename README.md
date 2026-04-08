@@ -6,6 +6,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-blue.svg)](https://kotlinlang.org/)
 [![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue.svg)](https://streamlinelabs.dev/docs/sdks/kotlin)
+[![Maven Central](https://img.shields.io/maven-central/v/io.streamline/streamline-sdk.svg)](https://search.maven.org/artifact/io.streamline/streamline-sdk)
 
 Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline) — *The Redis of Streaming*.
 
@@ -376,6 +377,56 @@ The [`examples/`](examples/) directory contains runnable examples:
 | [SchemaRegistryUsage.kt](examples/SchemaRegistryUsage.kt) | Schema registration and validation |
 | [CircuitBreakerUsage.kt](examples/CircuitBreakerUsage.kt) | Resilient production with circuit breaker |
 | [SecurityUsage.kt](examples/SecurityUsage.kt) | TLS and SASL authentication |
+
+## Moonshot Features
+
+> ⚠️ **Experimental** — These features require Streamline server 0.3.0+ with moonshot feature flags enabled.
+
+### Semantic Search
+
+Query topics by meaning instead of offset. Requires a topic created with `semantic.embed=true`.
+
+```kotlin
+val results = client.search("logs.app", "payment failure", k = 10)
+for (hit in results) {
+    println("[p${hit.partition}] offset=${hit.offset} score=${"%.2f".format(hit.score)}")
+}
+```
+
+### Attestation Verification
+
+Verify cryptographic provenance attestations attached to records by data contracts.
+
+```kotlin
+import io.streamline.sdk.StreamlineVerifier
+
+val verifier = StreamlineVerifier(publicKeyBytes)
+val result = verifier.verify(record)
+println("Verified: ${result.verified}, Producer: ${result.producerId}")
+```
+
+### Agent Memory (MCP)
+
+Use Streamline as persistent memory for AI agents via the MCP protocol.
+
+```kotlin
+import io.streamline.sdk.MemoryClient
+
+val memory = MemoryClient("http://localhost:9094/mcp/v1")
+memory.remember("user prefers dark mode", tags = listOf("preferences"))
+val results = memory.recall("user preferences", k = 5)
+```
+
+### Branched Streams
+
+Create topic branches for replay, A/B testing, or counterfactual analysis.
+
+```kotlin
+val branch = admin.createBranch("events", "experiment-v2")
+client.messages(branch.topic).collect { msg ->
+    println("Branched: ${msg.value}")
+}
+```
 
 ## Contributing
 

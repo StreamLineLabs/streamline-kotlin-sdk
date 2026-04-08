@@ -125,6 +125,25 @@ data class QueryResult(
     val rowCount: Int = 0,
 )
 
+// -- Search --
+
+/** A single search result from a topic. */
+@Serializable
+data class SearchResult(
+    val partition: Int,
+    val offset: Long,
+    val score: Double,
+    val value: String? = null,
+)
+
+/** Internal response from the search API. */
+@Serializable
+internal data class SearchApiResponse(
+    val hits: List<SearchResult> = emptyList(),
+    @kotlinx.serialization.SerialName("took_ms")
+    val tookMs: Long = 0,
+)
+
 // -- Server Info --
 
 /** Information about the Streamline server. */
@@ -151,14 +170,20 @@ enum class ErrorCode {
     SCHEMA,
     CONFIGURATION,
     INTERNAL,
-    CIRCUIT_OPEN;
+    CIRCUIT_OPEN,
+    CONTRACT_VIOLATION,
+    ATTESTATION_FAILED,
+    MEMORY_ACCESS_DENIED,
+    BRANCH_QUOTA_EXCEEDED,
+    SEMANTIC_SEARCH_UNAVAILABLE;
 
     /** Whether errors of this code are generally safe to retry. */
     val defaultRetryable: Boolean
         get() = when (this) {
-            CONNECTION, TIMEOUT, INTERNAL -> true
+            CONNECTION, TIMEOUT, INTERNAL, SEMANTIC_SEARCH_UNAVAILABLE -> true
             AUTHENTICATION, AUTHORIZATION, TOPIC_NOT_FOUND, PARTITION_NOT_FOUND,
-            PROTOCOL, SERIALIZATION, SCHEMA, CONFIGURATION, CIRCUIT_OPEN -> false
+            PROTOCOL, SERIALIZATION, SCHEMA, CONFIGURATION, CIRCUIT_OPEN,
+            CONTRACT_VIOLATION, ATTESTATION_FAILED, MEMORY_ACCESS_DENIED, BRANCH_QUOTA_EXCEEDED -> false
         }
 }
 
@@ -269,6 +294,38 @@ class ConfigurationException(message: String) : StreamlineException(
     message = message,
     errorCode = ErrorCode.CONFIGURATION,
     hint = "Review the SDK configuration values",
+)
+
+class ContractViolationException(topic: String, details: String) : StreamlineException(
+    message = "Contract violation on topic '$topic': $details",
+    errorCode = ErrorCode.CONTRACT_VIOLATION,
+    hint = "Validate the record against the topic's registered schema",
+)
+
+class AttestationVerificationException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.ATTESTATION_FAILED,
+    hint = "Check the signing key and attestation configuration",
+)
+
+class MemoryAccessDeniedException(agent: String) : StreamlineException(
+    message = "Memory access denied for agent: $agent",
+    errorCode = ErrorCode.MEMORY_ACCESS_DENIED,
+    hint = "Verify agent permissions for memory operations",
+)
+
+class BranchQuotaExceededException(branch: String, details: String) : StreamlineException(
+    message = "Branch quota exceeded for '$branch': $details",
+    errorCode = ErrorCode.BRANCH_QUOTA_EXCEEDED,
+    hint = "Increase branch quotas or clean up unused branches",
+)
+
+class SemanticSearchUnavailableException(message: String, cause: Throwable? = null) : StreamlineException(
+    message = message,
+    cause = cause,
+    errorCode = ErrorCode.SEMANTIC_SEARCH_UNAVAILABLE,
+    hint = "Check embedding provider connectivity and configuration",
 )
 
 // -- Cluster Info --
