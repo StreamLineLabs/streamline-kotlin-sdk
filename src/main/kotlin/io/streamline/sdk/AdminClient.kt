@@ -88,6 +88,7 @@ class AdminClient(
         replicationFactor: Int = 1,
         config: Map<String, String> = emptyMap(),
     ) {
+        TopicNameValidator.validate(name)
         val body = buildJsonObject {
             put("name", name)
             put("partitions", partitions)
@@ -101,6 +102,7 @@ class AdminClient(
 
     /** Delete a topic by name. */
     suspend fun deleteTopic(name: String) {
+        TopicNameValidator.validate(name)
         request(HttpMethod.Delete, "/v1/topics/$name")
     }
 

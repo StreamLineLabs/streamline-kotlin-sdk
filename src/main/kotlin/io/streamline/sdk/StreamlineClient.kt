@@ -175,6 +175,7 @@ class StreamlineClient(
      * If disconnected, the message is placed in the offline queue.
      */
     suspend fun produce(topic: String, key: String? = null, value: String) {
+        TopicNameValidator.validate(topic)
         val message = StreamlineMessage(topic = topic, key = key, value = value)
 
         val session = wsSession
@@ -326,6 +327,7 @@ class StreamlineClient(
 
     /** Register a handler for messages on the given topic. */
     suspend fun subscribe(topic: String, handler: MessageHandler) {
+        TopicNameValidator.validate(topic)
         subscriptionsMutex.withLock {
             subscriptions[topic] = handler
         }
@@ -739,6 +741,7 @@ class StreamlineClient(
      * @return Aggregated produce result.
      */
     suspend fun produceBatch(messages: List<StreamlineMessage>): ProduceResult {
+        messages.forEach { TopicNameValidator.validate(it.topic) }
         val session = wsSession
             ?: throw NotConnectedException()
 

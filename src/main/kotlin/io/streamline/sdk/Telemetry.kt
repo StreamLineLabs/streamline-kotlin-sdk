@@ -125,6 +125,7 @@ class TracedClient(
     }
 
     suspend fun produce(topic: String, key: String? = null, value: String) {
+        TopicNameValidator.validate(topic)
         val span = telemetry.startSpan(
             "streamline.produce",
             buildMap {
@@ -144,6 +145,7 @@ class TracedClient(
     }
 
     suspend fun subscribe(topic: String, handler: MessageHandler) {
+        TopicNameValidator.validate(topic)
         val span = telemetry.startSpan(
             "streamline.subscribe",
             mapOf("messaging.destination.name" to topic),
@@ -223,12 +225,14 @@ class TracedAdminClient(
     ) = traced("streamline.admin.create_topic",
         mapOf("messaging.destination.name" to name, "topic.partitions" to partitions.toString()),
     ) {
+        TopicNameValidator.validate(name)
         delegate.createTopic(name, partitions, replicationFactor, config)
     }
 
     suspend fun deleteTopic(name: String) = traced("streamline.admin.delete_topic",
         mapOf("messaging.destination.name" to name),
     ) {
+        TopicNameValidator.validate(name)
         delegate.deleteTopic(name)
     }
 
