@@ -17,7 +17,7 @@ class ErrorModelTest {
     @Test
     fun `all error codes are present`() {
         val codes = ErrorCode.entries
-        assertEquals(12, codes.size)
+        assertEquals(17, codes.size)
         assertTrue(codes.contains(ErrorCode.CONNECTION))
         assertTrue(codes.contains(ErrorCode.TIMEOUT))
         assertTrue(codes.contains(ErrorCode.AUTHENTICATION))
@@ -30,6 +30,11 @@ class ErrorModelTest {
         assertTrue(codes.contains(ErrorCode.CONFIGURATION))
         assertTrue(codes.contains(ErrorCode.INTERNAL))
         assertTrue(codes.contains(ErrorCode.CIRCUIT_OPEN))
+        assertTrue(codes.contains(ErrorCode.CONTRACT_VIOLATION))
+        assertTrue(codes.contains(ErrorCode.ATTESTATION_FAILED))
+        assertTrue(codes.contains(ErrorCode.MEMORY_ACCESS_DENIED))
+        assertTrue(codes.contains(ErrorCode.BRANCH_QUOTA_EXCEEDED))
+        assertTrue(codes.contains(ErrorCode.SEMANTIC_SEARCH_UNAVAILABLE))
     }
 
     @Test
@@ -37,6 +42,7 @@ class ErrorModelTest {
         assertTrue(ErrorCode.CONNECTION.defaultRetryable)
         assertTrue(ErrorCode.TIMEOUT.defaultRetryable)
         assertTrue(ErrorCode.INTERNAL.defaultRetryable)
+        assertTrue(ErrorCode.SEMANTIC_SEARCH_UNAVAILABLE.defaultRetryable)
     }
 
     @Test
@@ -50,6 +56,10 @@ class ErrorModelTest {
         assertFalse(ErrorCode.SCHEMA.defaultRetryable)
         assertFalse(ErrorCode.CONFIGURATION.defaultRetryable)
         assertFalse(ErrorCode.CIRCUIT_OPEN.defaultRetryable)
+        assertFalse(ErrorCode.CONTRACT_VIOLATION.defaultRetryable)
+        assertFalse(ErrorCode.ATTESTATION_FAILED.defaultRetryable)
+        assertFalse(ErrorCode.MEMORY_ACCESS_DENIED.defaultRetryable)
+        assertFalse(ErrorCode.BRANCH_QUOTA_EXCEEDED.defaultRetryable)
     }
 
     // -- StreamlineException base --
