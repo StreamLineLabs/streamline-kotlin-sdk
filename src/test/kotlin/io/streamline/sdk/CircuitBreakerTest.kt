@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import java.util.concurrent.atomic.AtomicLong
@@ -105,7 +106,7 @@ class CircuitBreakerTest {
 
         val ex = assertFailsWith<CircuitOpenException> { cb.allow() }
         assertEquals(ErrorCode.CIRCUIT_OPEN, ex.errorCode)
-        assertTrue(ex is StreamlineException)
+        assertFalse(ex.isRetryable())
     }
 
     // -- OPEN → HALF_OPEN transition --

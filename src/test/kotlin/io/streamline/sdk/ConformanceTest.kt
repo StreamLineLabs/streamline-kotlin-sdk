@@ -456,7 +456,7 @@ class ErrorConformanceTest {
 
     @Test fun `E02 invalid partition — error hierarchy`() = runTest {
         val ex = StreamlineException("Invalid partition: -1")
-        assertTrue(ex is Exception)
+        assertEquals(ErrorCode.INTERNAL, ex.errorCode)
         assertEquals("Invalid partition: -1", ex.message)
     }
 
@@ -466,10 +466,10 @@ class ErrorConformanceTest {
         val timeout = StreamlineTimeoutException()
         val queueFull = OfflineQueueFullException()
 
-        assertTrue(notConnected is StreamlineException)
-        assertTrue(connFailed is StreamlineException)
-        assertTrue(timeout is StreamlineException)
-        assertTrue(queueFull is StreamlineException)
+        assertEquals(ErrorCode.CONNECTION, notConnected.errorCode)
+        assertEquals(ErrorCode.CONNECTION, connFailed.errorCode)
+        assertEquals(ErrorCode.TIMEOUT, timeout.errorCode)
+        assertEquals(ErrorCode.INTERNAL, queueFull.errorCode)
 
         assertEquals("Client is not connected", notConnected.message)
         assertEquals("Operation timed out", timeout.message)
@@ -483,11 +483,11 @@ class ErrorConformanceTest {
         val queryErr = QueryException("syntax error", null)
         val schemaErr = SchemaRegistryException("not found", null)
 
-        assertTrue(topicErr is StreamlineException)
-        assertTrue(authErr is StreamlineException)
-        assertTrue(adminErr is StreamlineException)
-        assertTrue(queryErr is StreamlineException)
-        assertTrue(schemaErr is StreamlineException)
+        assertFalse(topicErr.isRetryable())
+        assertFalse(authErr.isRetryable())
+        assertTrue(adminErr.isRetryable())
+        assertTrue(queryErr.isRetryable())
+        assertFalse(schemaErr.isRetryable())
 
         assertTrue(topicErr.message!!.contains("events"))
         assertTrue(authErr.message!!.contains("bad creds"))

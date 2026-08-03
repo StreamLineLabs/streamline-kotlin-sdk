@@ -229,32 +229,4 @@ class ErrorModelTest {
         assertFalse(ex.isRetryable())
         assertNotNull(ex.hint)
     }
-
-    // -- Exception hierarchy is preserved --
-
-    @Test
-    fun `all exceptions extend StreamlineException`() {
-        assertTrue(NotConnectedException() is StreamlineException)
-        assertTrue(ConnectionFailedException("x") is StreamlineException)
-        assertTrue(AuthenticationFailedException("x") is StreamlineException)
-        assertTrue(AuthorizationFailedException("x") is StreamlineException)
-        assertTrue(StreamlineTimeoutException() is StreamlineException)
-        assertTrue(TopicNotFoundException("x") is StreamlineException)
-        assertTrue(PartitionNotFoundException("x", 0) is StreamlineException)
-        assertTrue(ProtocolException("x") is StreamlineException)
-        assertTrue(SerializationException("x") is StreamlineException)
-        assertTrue(OfflineQueueFullException() is StreamlineException)
-        assertTrue(AdminOperationException("x") is StreamlineException)
-        assertTrue(QueryException("x") is StreamlineException)
-        assertTrue(SchemaRegistryException("x") is StreamlineException)
-        assertTrue(CircuitOpenException() is StreamlineException)
-        assertTrue(ConfigurationException("x") is StreamlineException)
-    }
-
-    @Test
-    fun `all exceptions extend kotlin Exception`() {
-        assertTrue(NotConnectedException() is Exception)
-        assertTrue(CircuitOpenException() is Exception)
-        assertTrue(ConfigurationException("x") is Exception)
-    }
 }
