@@ -28,6 +28,12 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("io.ktor:ktor-client-mock:3.0.0")
+    // Real, in-process WebSocket server used to test reconnect/subscription
+    // replay/generation-guard behavior against an actual session lifecycle
+    // rather than a hand-mocked one (loopback only; no external network).
+    testImplementation("io.ktor:ktor-server-core:3.0.0")
+    testImplementation("io.ktor:ktor-server-cio:3.0.0")
+    testImplementation("io.ktor:ktor-server-websockets:3.0.0")
 }
 
 tasks.test {

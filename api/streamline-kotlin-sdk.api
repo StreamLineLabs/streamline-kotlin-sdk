@@ -132,6 +132,58 @@ public final class io/streamline/sdk/ScramMechanism : java/lang/Enum {
 	public static fun values ()[Lio/streamline/sdk/ScramMechanism;
 }
 
+public final class io/streamline/sdk/StreamlineClient {
+	public fun <init> (Lio/streamline/sdk/StreamlineConfiguration;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;Lio/streamline/sdk/SchemaRegistryClient;)V
+	public synthetic fun <init> (Lio/streamline/sdk/StreamlineConfiguration;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;Lio/streamline/sdk/SchemaRegistryClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun abortTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun beginTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close ()V
+	public final fun commitOffsets (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun commitTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun committed (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun disconnect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun flushBatch (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getConsumerConfig ()Lio/streamline/sdk/ConsumerConfig;
+	public final fun getMetrics ()Lio/streamline/sdk/ClientMetricsSnapshot;
+	public final fun getProducerConfig ()Lio/streamline/sdk/ProducerConfig;
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun messages (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+	public final fun poll (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun poll$default (Lio/streamline/sdk/StreamlineClient;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun position (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun produce (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun produce$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun produceBatch (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun produceWithSchema (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun produceWithSchema$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun seekToBeginning (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun seekToEnd (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun seekToOffset (Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setConsumerConfig (Lio/streamline/sdk/ConsumerConfig;)V
+	public final fun setProducerConfig (Lio/streamline/sdk/ProducerConfig;)V
+	public final fun subscribe (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun transactionalProduce (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transactionalProduce$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/StreamlineClient$ProduceResult {
+	public fun <init> (IILjava/util/Map;)V
+	public synthetic fun <init> (IILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (IILjava/util/Map;)Lio/streamline/sdk/StreamlineClient$ProduceResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/StreamlineClient$ProduceResult;IILjava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/StreamlineClient$ProduceResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/Map;
+	public final fun getFailureCount ()I
+	public final fun getSuccessCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/streamline/sdk/StreamlineConfiguration {
 	public fun <init> (Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;)V
 	public synthetic fun <init> (Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   settings instead of silently accepting them.
 - Redact bearer tokens, passwords, and credential providers from public
   configuration `toString()` output.
+- Serialize produce commands with `kotlinx.serialization` rather than JSON
+  string interpolation.
+- Serialize all remaining WebSocket control commands (`subscribe`,
+  `unsubscribe`, `seek`, `seek_to_beginning`, `seek_to_end`, `position`,
+  `committed`, `commit_offsets`, `heartbeat`) with `kotlinx.serialization`
+  instead of raw string interpolation, so topic/group/offset-key content can
+  never break out of its JSON string context.
+- Validate topic names consistently across `unsubscribe`, `seekToOffset`,
+  `seekToBeginning`, `seekToEnd`, `position`, `committed`, and
+  `transactionalProduce` (previously only enforced by `produce`/`subscribe`).
 - `ProducerConfig.acks` now defaults to `Acks.NONE` (previously `Acks.ONE`),
   and `ProducerConfig.validate()` rejects `Acks.ONE`/`Acks.ALL` and
   `idempotent = true` with `ConfigurationException`, enforced both when
@@ -32,6 +42,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end-to-end. `Acks.ONE`/`Acks.ALL` and `idempotent` remain on the type only
   for source compatibility.
 
+### Reliability
+- `flushBatch` no longer drops pending messages when the session is missing
+  or a send fails partway through a batch: unsent messages (including any
+  never attempted after a failure) are requeued at the front of the batch,
+  in order, with no duplication of already-sent messages.
+- Reconnects now replay every active `subscribe`d topic on the new session,
+  a clean server-initiated close (the WebSocket `incoming` channel
+  completing normally, with no exception) is now treated as a disconnect
+  and triggers reconnection instead of leaving the client silently stuck on
+  a dead session, and a monotonic connection generation guards against a
+  stale receive loop or a stale scheduled reconnect mutating state once a
+  newer connection already exists.
+- `connect()` now reserves that connection generation *before* the WebSocket
+  handshake begins (previously it was reserved after the session was already
+  installed). A handshake that resolves after a concurrent `disconnect()`/
+  `close()`/newer `connect()` already advanced the generation is fenced off:
+  the now-orphaned session is closed immediately and never installed as the
+  active session or used to mutate connection state, instead of silently
+  resurrecting a connection that was explicitly torn down or superseded.
+  Generation validation, session installation, and disconnect/close state
+  mutation are now one atomic lifecycle transition; rejected sessions are
+  closed only after that lifecycle lock is released.
+- A batch requeued by `flushBatch` (missing session, or a send failing
+  partway through) no longer sits stranded indefinitely: every successful
+  (re)connect now also replays any pending batch content, alongside the
+  existing offline-queue drain and subscription replay, with `flushBatch`'s
+  own atomic drain-then-send still guaranteeing no duplicate or dropped
+  message.
+- `produce`/`flushBatch`/`produceBatch` no longer silently drop an explicit
+  `StreamlineMessage.partition`: it is now forwarded to the server as part of
+  the produce command, with a negative value rejected up front (before
+  anything in a `produceBatch` call is sent) instead of being ignored.
+- Route WebSocket input through one dispatcher and serialize control-response
+  waits to avoid competing receives.
 
 ## [0.3.0] - 2026-04-20
 
