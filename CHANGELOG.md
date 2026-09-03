@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Bind local Ed25519 attestation verification to the consumed payload hash,
+  topic, partition, and offset.
+- Bind attestation `key_id` to a trusted expected key ID or a caller-supplied
+  `TrustedKeyResolver`, so identity is authenticated against a specific
+  registered key instead of a self-declared, unauthenticated label. The
+  original single-`PublicKey` constructor remains source-compatible but is
+  deprecated and now fails verification closed because no trusted key ID was
+  supplied.
+- Reject unwired SCRAM, legacy `SaslConfig`, and client-certificate/mTLS
+  settings instead of silently accepting them.
+- Redact bearer tokens, passwords, and credential providers from public
+  configuration `toString()` output.
+- `ProducerConfig.acks` now defaults to `Acks.NONE` (previously `Acks.ONE`),
+  and `ProducerConfig.validate()` rejects `Acks.ONE`/`Acks.ALL` and
+  `idempotent = true` with `ConfigurationException`, enforced both when
+  `producerConfig` is assigned and again at every `produce`/`flushBatch`/
+  `produceBatch` send. The WebSocket produce command has no correlated
+  per-message broker acknowledgment, so honoring those settings would
+  silently claim a delivery/deduplication guarantee the transport cannot
+  verify; only `Acks.NONE` with a non-idempotent producer is honored
+  end-to-end. `Acks.ONE`/`Acks.ALL` and `idempotent` remain on the type only
+  for source compatibility.
+
 
 ## [0.3.0] - 2026-04-20
 

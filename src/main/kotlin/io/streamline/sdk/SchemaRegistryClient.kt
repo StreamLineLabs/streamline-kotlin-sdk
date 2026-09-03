@@ -222,7 +222,7 @@ class SchemaRegistryClient(
                 if (auth != null) {
                     applyAuth(auth)
                 } else {
-                    authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                    authToken?.let { header(HttpHeaders.Authorization, bearerAuthorization(it)) }
                 }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
@@ -241,7 +241,7 @@ class SchemaRegistryClient(
             }
 
             return response.bodyAsText()
-        } catch (e: SchemaRegistryException) {
+        } catch (e: StreamlineException) {
             throw e
         } catch (e: Exception) {
             throw SchemaRegistryException("Request failed: ${e.message}", e)

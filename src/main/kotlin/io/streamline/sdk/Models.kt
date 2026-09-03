@@ -1,6 +1,7 @@
 package io.streamline.sdk
 
 import kotlinx.serialization.Serializable
+import java.net.URI
 import java.time.Instant
 
 // -- Connection State --
@@ -38,7 +39,41 @@ data class StreamlineConfiguration(
     val maxBackoffMs: Long = 30_000,
     val tls: TlsConfig? = null,
     val sasl: SaslConfig? = null,
-)
+) {
+    init {
+        if (sasl != null) {
+            throw ConfigurationException(
+                "StreamlineConfiguration.sasl is not wired to the WebSocket transport; use a supported AuthConfig"
+            )
+        }
+        tls?.validate()
+    }
+
+    override fun toString(): String =
+        "StreamlineConfiguration(" +
+            "url=${redactUrl(url)}, " +
+            "autoReconnect=$autoReconnect, " +
+            "maxRetries=$maxRetries, " +
+            "timeoutMs=$timeoutMs, " +
+            "authToken=${authToken?.let { "[REDACTED]" }}, " +
+            "initialBackoffMs=$initialBackoffMs, " +
+            "maxBackoffMs=$maxBackoffMs, " +
+            "tls=$tls, " +
+            "sasl=$sasl" +
+            ")"
+}
+
+private fun redactUrl(url: String): String =
+    try {
+        val uri = URI(url)
+        if (uri.scheme == null || uri.host == null) {
+            "[REDACTED]"
+        } else {
+            URI(uri.scheme, null, uri.host, uri.port, uri.path, null, null).toString()
+        }
+    } catch (_: Exception) {
+        "[REDACTED]"
+    }
 
 // -- Messages --
 

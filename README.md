@@ -224,18 +224,33 @@ val config = StreamlineConfiguration(
 )
 ```
 
-### SASL Authentication
+Custom trust stores are supported. Client-certificate/mTLS fields are retained
+for source compatibility but rejected because the CIO client-certificate path
+is not wired.
+
+### Authentication
+
+Bearer tokens and HTTP Basic-compatible credentials are supported:
 
 ```kotlin
-val config = StreamlineConfiguration(
-    url = "ws://streamline.example.com:9092",
-    sasl = SaslConfig(
-        mechanism = SaslMechanism.SCRAM_SHA_256,
-        username = "admin",
-        password = "secret",
+val client = StreamlineClient(
+    configuration = StreamlineConfiguration(
+        url = "wss://streamline.example.com:9092",
+        authToken = System.getenv("STREAMLINE_TOKEN"),
     ),
 )
+
+val basicClient = StreamlineClient(
+    configuration = StreamlineConfiguration(
+        url = "wss://streamline.example.com:9092",
+    ),
+    auth = AuthConfig.PlainAuth("admin", System.getenv("STREAMLINE_PASSWORD")),
+)
 ```
+
+`SaslConfig` and `AuthConfig.ScramAuth` remain available for source
+compatibility but fail with `ConfigurationException`; SCRAM negotiation is not
+implemented by the current HTTP/WebSocket transport.
 
 ## Producer & Consumer Configuration
 
@@ -245,8 +260,7 @@ val producerConfig = ProducerConfig(
     batchSize = 32768,
     lingerMs = 5,
     compression = CompressionType.LZ4,
-    acks = Acks.ALL,
-    idempotent = true,
+    acks = Acks.NONE,
 )
 
 // Consumer tuning
@@ -258,13 +272,22 @@ val consumerConfig = ConsumerConfig(
 )
 ```
 
+`Acks.ONE`/`Acks.ALL` and `idempotent = true` are retained on `ProducerConfig`
+for source compatibility but rejected with `ConfigurationException` (both when
+`producerConfig` is assigned and again on every send): the WebSocket produce
+command has no correlated per-message broker acknowledgment, so honoring
+those settings would silently claim a delivery/deduplication guarantee the
+transport cannot verify. Only `Acks.NONE` with a non-idempotent producer is
+currently honored end-to-end.
+
 ## Features
 
 - **Ktor WebSocket** connection to Streamline server
 - **Coroutine-native** — all operations are `suspend` functions
 - **Admin client** — topic CRUD, consumer groups, SQL queries via HTTP REST API
 - **Schema Registry** — register, retrieve, and validate schemas (Avro, Protobuf, JSON)
-- **Security** — TLS encryption and SASL authentication (PLAIN, SCRAM-SHA-256/512)
+- **Security** — TLS trust stores, bearer tokens, HTTP Basic-compatible auth,
+  explicit rejection of unwired SCRAM/mTLS options, and redacted configuration output
 - **Producer/Consumer config** — batching, compression, acknowledgments, consumer groups
 - **Flow-based consumption** — idiomatic `Flow<StreamlineMessage>` for streaming
 - **Telemetry** — pluggable tracing with `ConsoleTelemetry` and W3C traceparent propagation
@@ -285,7 +308,7 @@ val consumerConfig = ConsumerConfig(
 | `initialBackoffMs` | `500` | Initial reconnection backoff (ms) |
 | `maxBackoffMs` | `30000` | Maximum backoff cap (ms) |
 | `tls` | `null` | TLS configuration (see [Security](#security)) |
-| `sasl` | `null` | SASL authentication (see [Security](#security)) |
+| `sasl` | `null` | Retained for source compatibility; non-null values are rejected |
 
 ## Error Handling
 
@@ -399,8 +422,12 @@ Verify cryptographic provenance attestations attached to records by data contrac
 
 ```kotlin
 import io.streamline.sdk.StreamlineVerifier
+import java.security.KeyFactory
+import java.security.spec.X509EncodedKeySpec
 
-val verifier = StreamlineVerifier(publicKeyBytes)
+val publicKey = KeyFactory.getInstance("Ed25519")
+    .generatePublic(X509EncodedKeySpec(publicKeyBytes))
+val verifier = StreamlineVerifier(publicKey, expectedKeyId = "producer-key-1")
 val result = verifier.verify(record)
 println("Verified: ${result.verified}, Producer: ${result.producerId}")
 ```

@@ -62,23 +62,27 @@ class TlsConfigTest {
     }
 
     @Test
-    fun `enabled TlsConfig with complete key store passes validation`() {
-        TlsConfig(
+    fun `enabled TlsConfig rejects complete key store because mTLS is not wired`() {
+        val tls = TlsConfig(
             enabled = true,
             keyStorePath = "/key.jks",
             keyStorePassword = "pass",
-        ).validate()
+        )
+        val ex = assertFailsWith<ConfigurationException> { tls.validate() }
+        assertTrue(ex.message!!.contains("mTLS"))
     }
 
     @Test
-    fun `enabled TlsConfig with full mTLS config passes validation`() {
-        TlsConfig(
+    fun `enabled TlsConfig rejects full mTLS config`() {
+        val tls = TlsConfig(
             enabled = true,
             trustStorePath = "/trust.jks",
             trustStorePassword = "tp",
             keyStorePath = "/key.jks",
             keyStorePassword = "kp",
-        ).validate()
+        )
+        val ex = assertFailsWith<ConfigurationException> { tls.validate() }
+        assertTrue(ex.message!!.contains("mTLS"))
     }
 
     @Test
@@ -89,7 +93,7 @@ class TlsConfigTest {
             keyStorePassword = null,
         )
         val ex = assertFailsWith<ConfigurationException> { tls.validate() }
-        assertTrue(ex.message!!.contains("keyStorePassword"))
+        assertTrue(ex.message!!.contains("mTLS"))
     }
 
     @Test
@@ -101,6 +105,16 @@ class TlsConfigTest {
         )
         val ex = assertFailsWith<ConfigurationException> { tls.validate() }
         assertTrue(ex.message!!.contains("trustStorePassword"))
+    }
+
+    @Test
+    fun `trustStorePassword without trustStorePath fails validation`() {
+        val tls = TlsConfig(
+            enabled = true,
+            trustStorePassword = "pass",
+        )
+        val ex = assertFailsWith<ConfigurationException> { tls.validate() }
+        assertTrue(ex.message!!.contains("trustStorePath"))
     }
 
     // -- StreamlineConfiguration wiring --
@@ -117,6 +131,43 @@ class TlsConfigTest {
     fun `StreamlineConfiguration defaults tls to null`() {
         val config = StreamlineConfiguration(url = "ws://localhost:9092")
         assertNull(config.tls)
+    }
+
+    @Test
+    fun `StreamlineConfiguration rejects unwired SaslConfig`() {
+        assertFailsWith<ConfigurationException> {
+            StreamlineConfiguration(
+                url = "ws://localhost:9092",
+                sasl = SaslConfig(username = "user", password = "secret"),
+            )
+        }
+    }
+
+    @Test
+    fun `security configurations redact secrets from toString`() {
+        val tlsText = TlsConfig(
+            enabled = true,
+            trustStorePath = "/trust.jks",
+            trustStorePassword = "trust-secret",
+        ).toString()
+        val saslText = SaslConfig(
+            username = "user",
+            password = "sasl-secret",
+        ).toString()
+        val configText = StreamlineConfiguration(
+            url = "wss://url-user:url-secret@localhost:9092/path?token=query-secret#fragment-secret",
+            authToken = "bearer-secret",
+        ).toString()
+
+        assertFalse(tlsText.contains("trust-secret"))
+        assertFalse(saslText.contains("sasl-secret"))
+        assertFalse(configText.contains("bearer-secret"))
+        assertFalse(configText.contains("url-secret"))
+        assertFalse(configText.contains("query-secret"))
+        assertFalse(configText.contains("fragment-secret"))
+        assertTrue(tlsText.contains("[REDACTED]"))
+        assertTrue(saslText.contains("[REDACTED]"))
+        assertTrue(configText.contains("[REDACTED]"))
     }
 
     // -- Serializer interface --
