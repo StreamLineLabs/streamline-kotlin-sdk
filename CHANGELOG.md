@@ -76,6 +76,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   anything in a `produceBatch` call is sent) instead of being ignored.
 - Route WebSocket input through one dispatcher and serialize control-response
   waits to avoid competing receives.
+- Compile all examples and check the public API baseline during `check`.
+- Wire the checked-in `ktlint` baseline into the build so `ktlintCheck`
+  (used by CI and the release workflow) actually passes against grandfathered
+  pre-existing style debt while still failing on new violations.
+
+### Release
+- Gate the tagged release workflow's packaging/publish steps on a real
+  `integration-test` job (docker-compose Streamline fixture +
+  `./gradlew integrationTest`), matching the CI job of the same name. There
+  is no unit-test fallback: `integrationTest` fails closed when the fixture
+  is unreachable.
+- Validate tag/version/changelog alignment, generate CycloneDX SBOMs, and
+  attest GitHub release artifacts.
+- Publish binary and source jars as release assets. Remote Maven publication
+  remains intentionally unconfigured.
+
 
 ## [0.3.0] - 2026-04-20
 

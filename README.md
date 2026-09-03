@@ -6,7 +6,6 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-blue.svg)](https://kotlinlang.org/)
 [![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue.svg)](https://streamlinelabs.dev/docs/sdks/kotlin)
-[![Maven Central](https://img.shields.io/maven-central/v/io.streamline/streamline-sdk.svg)](https://search.maven.org/artifact/io.streamline/streamline-sdk)
 
 Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline) — *The Redis of Streaming*.
 
@@ -71,8 +70,8 @@ client.connect()
 
 client.beginTransaction()
 try {
-    client.produce("orders", key = "k1", value = "v1")
-    client.produce("orders", key = "k2", value = "v2")
+    client.transactionalProduce("orders", key = "k1", value = "v1")
+    client.transactionalProduce("orders", key = "k2", value = "v2")
     client.commitTransaction()
 } catch (e: Exception) {
     client.abortTransaction()
@@ -185,7 +184,8 @@ tracedAdmin.query("SELECT count(*) FROM events")
 
 ## Schema Registry
 
-The SDK includes a full Schema Registry client compatible with the Confluent wire format:
+The SDK includes a Schema Registry HTTP client for Confluent-compatible
+registry operations:
 
 ```kotlin
 val registry = SchemaRegistryClient("http://localhost:9094")
@@ -208,6 +208,11 @@ registry.close()
 ```
 
 Supports **AVRO**, **PROTOBUF**, and **JSON** schema formats.
+
+`produceWithSchema` retains its 0.3.0 signature but is compatibility-validation
+only: it submits the supplied string to the registry compatibility endpoint and
+then produces that exact string. It does not validate encoded records, prepend a
+schema id, or implement Confluent wire framing.
 
 ## Security
 
@@ -367,27 +372,33 @@ Protect your application from cascading failures when the Streamline server is u
 ```kotlin
 import io.streamline.sdk.CircuitBreaker
 import io.streamline.sdk.CircuitBreakerConfig
+import io.streamline.sdk.CircuitOpenException
 import io.streamline.sdk.CircuitState
+import kotlin.time.Duration.Companion.seconds
 
 val breaker = CircuitBreaker(CircuitBreakerConfig(
     failureThreshold = 5,        // Open after 5 consecutive failures
     successThreshold = 2,        // Close after 2 half-open successes
-    openTimeoutMs = 30_000L,     // 30s before probing
-    onStateChange = { from, to -> println("Circuit: $from → $to") },
+    openTimeout = 30.seconds,     // 30s before probing
 ))
 
-// Wrap a suspending operation
-val result = breaker.execute {
+try {
+    breaker.allow()
     client.produce("events", value = """{"action":"click"}""")
+    breaker.recordSuccess()
+} catch (e: CircuitOpenException) {
+    println("Circuit is open")
+} catch (e: Exception) {
+    breaker.recordFailure()
+    throw e
 }
 
-// Or check state manually
-if (breaker.state == CircuitState.OPEN) {
+if (breaker.state() == CircuitState.OPEN) {
     println("Circuit is open — requests will be rejected")
 }
 ```
 
-When the circuit is open, `execute` throws a retryable `StreamlineException`. See the [Circuit Breaker guide](https://streamlinelabs.dev/docs/features/circuit-breaker) for details.
+When the circuit is open, `allow()` throws `CircuitOpenException`.
 
 ## Examples
 
@@ -399,7 +410,7 @@ The [`examples/`](examples/) directory contains runnable examples:
 | [QueryUsage.kt](examples/QueryUsage.kt) | SQL analytics with the embedded query engine |
 | [SchemaRegistryUsage.kt](examples/SchemaRegistryUsage.kt) | Schema registration and validation |
 | [CircuitBreakerUsage.kt](examples/CircuitBreakerUsage.kt) | Resilient production with circuit breaker |
-| [SecurityUsage.kt](examples/SecurityUsage.kt) | TLS and SASL authentication |
+| [SecurityUsage.kt](examples/SecurityUsage.kt) | TLS, supported auth, and explicit unsupported-option behavior |
 
 ## Moonshot Features
 
@@ -462,4 +473,3 @@ Contributions are welcome! This is a community-maintained SDK. Please see the [o
 ## License
 
 Apache-2.0
-

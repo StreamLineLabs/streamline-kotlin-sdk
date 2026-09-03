@@ -16,24 +16,29 @@ import kotlin.time.Duration.Companion.seconds
  * Prerequisites:
  *   docker compose -f docker-compose.test.yml up -d
  *
- * These tests are skipped automatically when no server is reachable.
- * To run: ./gradlew test -Dstreamline.integration=true
+ * Run with `./gradlew integrationTest`. Executing this class without the
+ * integration task fails explicitly so a release check cannot silently pass.
  */
 class IntegrationTest {
 
     companion object {
-        private const val WS_URL = "ws://localhost:9092"
-        private const val HTTP_URL = "http://localhost:9094"
+        private val wsUrl: String =
+            System.getProperty("streamline.ws.url")
+                ?: System.getenv("STREAMLINE_WS_URL")
+                ?: "ws://localhost:9092"
+        private val httpUrl: String =
+            System.getProperty("streamline.http.url")
+                ?: System.getenv("STREAMLINE_HTTP_URL")
+                ?: "http://localhost:9094"
 
         private val enabled: Boolean by lazy {
             System.getProperty("streamline.integration")?.toBoolean() == true
         }
     }
 
-    private fun skipIfDisabled() {
-        if (!enabled) {
-            println("⏭ Integration tests disabled (set -Dstreamline.integration=true)")
-            return
+    private fun requireIntegrationTask() {
+        check(enabled) {
+            "Live integration tests must be run with ./gradlew integrationTest"
         }
     }
 
@@ -41,10 +46,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-01 admin health check`() = runTest {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         try {
             val healthy = admin.isHealthy()
             assertTrue(healthy, "Server should be healthy")
@@ -55,10 +59,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-02 admin server info`() = runTest {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         try {
             val info = admin.serverInfo()
             assertNotNull(info.version, "Version should not be null")
@@ -70,10 +73,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-03 topic lifecycle — create, list, describe, delete`() = runTest {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-topic-${System.currentTimeMillis()}"
         try {
             // Create
@@ -104,27 +106,24 @@ class IntegrationTest {
 
     @Test
     fun `INT-04 produce and consume via WebSocket`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-produce-${System.currentTimeMillis()}"
         admin.createTopic(topicName, partitions = 1)
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         try {
             client.connect()
             assertEquals(ConnectionState.CONNECTED, client.state.value)
 
-            // Produce
-            client.produce(topicName, key = "k1", value = "hello-integration")
-
-            // Subscribe and verify receipt
             var received: StreamlineMessage? = null
             client.subscribe(topicName) { msg ->
                 received = msg
             }
+
+            client.produce(topicName, key = "k1", value = "hello-integration")
 
             // Wait for delivery
             withTimeout(10_000) {
@@ -148,27 +147,23 @@ class IntegrationTest {
 
     @Test
     fun `INT-05 poll returns messages within timeout`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-poll-${System.currentTimeMillis()}"
         admin.createTopic(topicName, partitions = 1)
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         client.consumerConfig = ConsumerConfig(maxPollRecords = 10)
         try {
             client.connect()
+            client.subscribe(topicName) { }
 
-            // Produce several messages
             repeat(5) { i ->
                 client.produce(topicName, key = "k$i", value = "poll-msg-$i")
             }
             client.flushBatch()
-
-            // Subscribe (needed to start receiving)
-            client.subscribe(topicName) { }
 
             delay(2000) // Allow messages to arrive
 
@@ -187,14 +182,13 @@ class IntegrationTest {
 
     @Test
     fun `INT-06 batch produce returns delivery status`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-batch-${System.currentTimeMillis()}"
         admin.createTopic(topicName, partitions = 1)
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         try {
             client.connect()
@@ -219,26 +213,24 @@ class IntegrationTest {
 
     @Test
     fun `INT-07 transaction commit sends buffered messages`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-txn-${System.currentTimeMillis()}"
         admin.createTopic(topicName, partitions = 1)
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         try {
             client.connect()
+            var count = 0
+            client.subscribe(topicName) { count++ }
 
             client.beginTransaction()
             client.transactionalProduce(topicName, key = "txn-k1", value = "txn-v1")
             client.transactionalProduce(topicName, key = "txn-k2", value = "txn-v2")
             client.commitTransaction()
 
-            // Verify messages arrived
-            var count = 0
-            client.subscribe(topicName) { count++ }
             delay(3000)
             assertTrue(count >= 2, "Should receive transactional messages")
         } finally {
@@ -251,10 +243,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-08 transaction abort discards buffered messages`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         try {
             client.connect()
@@ -281,14 +272,13 @@ class IntegrationTest {
 
     @Test
     fun `INT-09 metrics track produce and consume counts`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val topicName = "int-test-metrics-${System.currentTimeMillis()}"
         admin.createTopic(topicName, partitions = 1)
 
-        val config = StreamlineConfiguration(url = WS_URL, timeoutMs = 10_000)
+        val config = StreamlineConfiguration(url = wsUrl, timeoutMs = 10_000)
         val client = StreamlineClient(config)
         try {
             client.connect()
@@ -313,10 +303,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-10 admin commit and fetch offsets via HTTP`() = runTest(timeout = 30.seconds) {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         val groupId = "int-test-group-${System.currentTimeMillis()}"
         try {
             // Commit offsets
@@ -334,10 +323,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-11 list consumer groups`() = runTest {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         try {
             // Should not throw
             val groups = admin.listConsumerGroups()
@@ -351,10 +339,9 @@ class IntegrationTest {
 
     @Test
     fun `INT-12 cluster info returns broker list`() = runTest {
-        skipIfDisabled()
-        if (!enabled) return@runTest
+        requireIntegrationTask()
 
-        val admin = AdminClient(HTTP_URL)
+        val admin = AdminClient(httpUrl)
         try {
             val cluster = admin.clusterInfo()
             assertTrue(cluster.brokers.isNotEmpty(), "Should have at least one broker")
