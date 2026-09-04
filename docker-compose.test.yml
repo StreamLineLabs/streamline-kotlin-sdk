@@ -2,7 +2,7 @@
 # Usage: docker compose -f docker-compose.test.yml up -d
 services:
   streamline:
-    image: ghcr.io/streamlinelabs/streamline:0.3.0
+    image: ghcr.io/streamlinelabs/streamline:0.4.0
     ports:
       - "9092:9092"
       - "9094:9094"

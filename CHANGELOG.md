@@ -76,6 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   anything in a `produceBatch` call is sent) instead of being ignored.
 - Route WebSocket input through one dispatcher and serialize control-response
   waits to avoid competing receives.
+- Make live integration checks use a dedicated failing `integrationTest` task
+  and the pinned Streamline 0.4.0 server image.
 - Compile all examples and check the public API baseline during `check`.
 - Wire the checked-in `ktlint` baseline into the build so `ktlintCheck`
   (used by CI and the release workflow) actually passes against grandfathered

@@ -1,4 +1,6 @@
-> 🟢 **Beta SDK** — This SDK is feature-complete with tests and CI. For production JVM use requiring Spring Boot integration, also see the [Java SDK](https://github.com/streamlinelabs/streamline-java-sdk). Contributions welcome!
+> 🟡 **Beta SDK** — Validate the SDK against your Streamline server version
+> before production use. Live integration tests require the pinned Streamline
+> 0.4.0 server image.
 
 # Streamline Kotlin SDK
 
@@ -12,7 +14,7 @@ Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline)
 ## Requirements
 
 - Kotlin 2.0+ / JDK 17+
-- Streamline server 0.2.0 or later
+- Streamline server 0.4.0 for the full API surface
 
 ## Installation
 
@@ -20,7 +22,7 @@ Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline)
 
 ```kotlin
 dependencies {
-    implementation("io.streamline:streamline-kotlin-sdk:0.2.0")
+    implementation("io.streamline:streamline-kotlin-sdk:0.4.0")
 }
 ```
 
@@ -30,7 +32,7 @@ dependencies {
 <dependency>
     <groupId>io.streamline</groupId>
     <artifactId>streamline-kotlin-sdk</artifactId>
-    <version>0.2.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
