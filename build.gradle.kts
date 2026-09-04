@@ -89,8 +89,10 @@ val validateVersionMetadata by tasks.registering {
             "Project version '$projectVersion' is not a release SemVer"
         }
         val changelog = layout.projectDirectory.file("CHANGELOG.md").asFile.readText()
-        require(changelog.contains("## [$projectVersion]")) {
-            "CHANGELOG.md has no release entry for $projectVersion"
+        val releaseHeading =
+            Regex("""(?m)^## \[${Regex.escape(projectVersion)}\] - \d{4}-\d{2}-\d{2}$""")
+        require(releaseHeading.containsMatchIn(changelog)) {
+            "CHANGELOG.md has no dated release entry for $projectVersion"
         }
     }
 }

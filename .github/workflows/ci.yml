@@ -69,6 +69,7 @@ jobs:
               echo "Server is ready"
               exit 0
             fi
+            echo "Waiting for Streamline... ($i/30)"
             sleep 2
           done
           echo "Server failed to start" && exit 1
