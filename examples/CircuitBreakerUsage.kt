@@ -1,76 +1,67 @@
 /**
  * Circuit breaker example for Streamline Kotlin SDK.
  *
- * Prerequisites:
- *   1. Start a Streamline server:  streamline --playground
- *   2. Run this example:           gradle run (or copy into your project)
- *
- * The circuit breaker prevents your application from repeatedly attempting
- * operations against a failing server. After consecutive failures it "opens"
- * and rejects requests immediately, giving the server time to recover.
+ * The circuit breaker prevents an application from repeatedly attempting
+ * operations against a failing server.
  */
 package io.streamline.examples
 
-import io.streamline.sdk.*
-import kotlinx.coroutines.*
+import io.streamline.sdk.CircuitBreaker
+import io.streamline.sdk.CircuitBreakerConfig
+import io.streamline.sdk.CircuitOpenException
+import io.streamline.sdk.CircuitState
+import io.streamline.sdk.StreamlineClient
+import io.streamline.sdk.StreamlineConfiguration
+import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 suspend fun main() {
     println("Circuit Breaker Example")
     println("========================================")
 
-    val config = StreamlineConfig(
-        url = System.getenv("STREAMLINE_WS_URL") ?: "ws://localhost:9092",
-    )
-
-    // Configure the circuit breaker
-    val cb = CircuitBreaker(
-        CircuitBreakerConfig(
-            failureThreshold = 5,       // Open after 5 consecutive failures
-            successThreshold = 2,       // Close after 2 successes in half-open
-            openTimeout = 10.seconds,   // Wait 10s before probing
-            halfOpenMaxRequests = 3,    // Allow 3 probe requests in half-open
-            onStateChange = { from, to ->
-                println("  [Circuit Breaker] $from → $to")
-            },
+    val config =
+        StreamlineConfiguration(
+            url = System.getenv("STREAMLINE_WS_URL") ?: "ws://localhost:9092",
         )
-    )
+    val breaker =
+        CircuitBreaker(
+            CircuitBreakerConfig(
+                failureThreshold = 5,
+                successThreshold = 2,
+                openTimeout = 10.seconds,
+                halfOpenMaxRequests = 3,
+            ),
+        )
 
     val client = StreamlineClient(config)
     client.connect()
-    println("Connected. Circuit state: ${cb.state}")
+    println("Connected. Circuit state: ${breaker.state()}")
 
-    // Send messages through the circuit breaker
     for (i in 0 until 20) {
-        if (!cb.allow()) {
-            println("  Message $i: REJECTED (circuit open)")
-            delay(1000)
-            continue
-        }
-
         try {
+            breaker.allow()
             client.produce("cb-example", value = "message-$i", key = "key-$i")
-            cb.recordSuccess()
-            println("  Message $i: sent (circuit: ${cb.state})")
-        } catch (e: CircuitBreakerOpenException) {
+            breaker.recordSuccess()
+            println("  Message $i: sent (circuit: ${breaker.state()})")
+        } catch (e: CircuitOpenException) {
             println("  Message $i: circuit breaker is OPEN")
+            delay(1000)
         } catch (e: Exception) {
-            cb.recordFailure()
-            println("  Message $i: FAILED (${e.message}) (circuit: ${cb.state})")
+            breaker.recordFailure()
+            println("  Message $i: FAILED (${e.message}) (circuit: ${breaker.state()})")
         }
     }
 
-    // Show final state
-    val counts = cb.counts
-    println("\nFinal circuit state: ${cb.state}")
-    println("Successes: ${counts.successes}, Failures: ${counts.failures}")
+    val counts = breaker.counts()
+    println("\nFinal circuit state: ${breaker.state()}")
+    println("Successes: ${counts.totalSuccesses}, Failures: ${counts.totalFailures}")
 
-    // Manual reset
-    if (cb.state == CircuitState.OPEN) {
-        cb.reset()
-        println("Circuit manually reset to: ${cb.state}")
+    if (breaker.state() == CircuitState.OPEN) {
+        breaker.reset()
+        println("Circuit manually reset to: ${breaker.state()}")
     }
 
     client.disconnect()
+    client.close()
     println("Done!")
 }

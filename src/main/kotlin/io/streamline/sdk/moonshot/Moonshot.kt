@@ -28,6 +28,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
+import java.net.URI
 import java.net.URLEncoder
 import java.util.Base64
 
@@ -56,7 +57,26 @@ data class MoonshotOptions(
     val httpUrl: String,
     val authToken: String? = null,
     val httpClient: HttpClient? = null,
-)
+) {
+    override fun toString(): String =
+        "MoonshotOptions(" +
+            "httpUrl=${redactUrl(httpUrl)}, " +
+            "authToken=${authToken?.let { "[REDACTED]" }}, " +
+            "httpClient=$httpClient" +
+            ")"
+}
+
+private fun redactUrl(url: String): String =
+    try {
+        val uri = URI(url)
+        if (uri.scheme == null || uri.host == null) {
+            "[REDACTED]"
+        } else {
+            URI(uri.scheme, null, uri.host, uri.port, uri.path, null, null).toString()
+        }
+    } catch (_: Exception) {
+        "[REDACTED]"
+    }
 
 abstract class MoonshotHttpBase(opts: MoonshotOptions) : AutoCloseable {
     protected val baseUrl: String = opts.httpUrl.trimEnd('/')
@@ -73,7 +93,7 @@ abstract class MoonshotHttpBase(opts: MoonshotOptions) : AutoCloseable {
         val response: HttpResponse = try {
             client.request("$baseUrl$path") {
                 this.method = method
-                authToken?.let { header("Authorization", "Bearer $it") }
+                authToken?.let { header("Authorization", bearerAuthorization(it)) }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body)
@@ -102,6 +122,11 @@ abstract class MoonshotHttpBase(opts: MoonshotOptions) : AutoCloseable {
 
     override fun close() {
         if (ownsClient) client.close()
+    }
+
+    protected fun bearerAuthorization(token: String): String {
+        require(token.isNotBlank()) { "Bearer auth token must not be blank" }
+        return "Bearer $token"
     }
 }
 
@@ -196,7 +221,7 @@ class ContractsClient(opts: MoonshotOptions) : MoonshotHttpBase(opts) {
         val response: HttpResponse = try {
             client.request("$baseUrl/api/v1/contracts/validate") {
                 this.method = HttpMethod.Post
-                authToken?.let { header("Authorization", "Bearer $it") }
+                authToken?.let { header("Authorization", bearerAuthorization(it)) }
                 contentType(ContentType.Application.Json)
                 setBody(json.encodeToString(JsonObject.serializer(), body))
             }

@@ -1,8 +1,15 @@
 package io.streamline.sdk
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -98,6 +105,342 @@ class StreamlineClientTest {
         assertEquals("new-key", copied.key)
         assertEquals(100L, copied.offset)
         assertEquals("t", copied.topic)
+    }
+
+    @Test
+    fun `produce payload safely serializes hostile input`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val message = StreamlineMessage(
+            topic = "events",
+            key = "key\"\\\n\u0001",
+            value = "\"},\"acks\":\"all\",\"admin\":true,\"value\":\"\n雪",
+            headers = mapOf(
+                "header\"}\n" to "value\\\"\r\u0002",
+            ),
+        )
+
+        val payload = client.buildPayload(message)
+        val decoded = Json.decodeFromString<ProduceCommand>(payload)
+        val jsonObject = Json.parseToJsonElement(payload).jsonObject
+
+        assertEquals(message.topic, decoded.topic)
+        assertEquals(message.key, decoded.key)
+        assertEquals(message.value, decoded.value)
+        assertEquals(message.headers, decoded.headers)
+        assertEquals("0", decoded.acks)
+        assertFalse("admin" in jsonObject)
+        client.close()
+    }
+
+    @Test
+    fun `produce payload preserves optional producer protocol fields`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        client.producerConfig = ProducerConfig(compression = CompressionType.GZIP)
+
+        val decoded = Json.decodeFromString<ProduceCommand>(
+            client.buildPayload(StreamlineMessage(topic = "events", value = "payload", partition = 2)),
+        )
+
+        assertNull(decoded.key)
+        assertEquals("0", decoded.acks)
+        assertEquals("gzip", decoded.compression)
+        assertNull(decoded.idempotent)
+        assertNull(decoded.sequence)
+        assertNull(decoded.headers)
+        // An explicit partition must be preserved, never silently dropped.
+        assertEquals(2, decoded.partition)
+        client.close()
+    }
+
+    @Test
+    fun `produce payload rejects an ack contract the transport cannot correlate`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<ConfigurationException> {
+            client.producerConfig = ProducerConfig(
+                compression = CompressionType.GZIP,
+                idempotent = true,
+                acks = Acks.ALL,
+            )
+        }
+        client.close()
+    }
+
+    @Test
+    fun `produce payload rejects a negative explicit partition instead of silently dropping it`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> {
+            client.buildPayload(StreamlineMessage(topic = "events", value = "payload", partition = -1))
+        }
+        client.close()
+    }
+
+    @Test
+    fun `single inbound dispatcher separates messages from control responses`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val received = CompletableDeferred<StreamlineMessage>()
+        client.subscribe("events") { received.complete(it) }
+        val pendingResponse = client.registerControlResponse("expected-request")
+        val message = StreamlineMessage(
+            topic = "events",
+            value = "payload",
+            partition = 0,
+            offset = 10,
+        )
+
+        client.dispatchIncoming(Json.encodeToString(message))
+
+        assertEquals(message, withTimeout(1000) { received.await() })
+        assertFalse(pendingResponse.response.isCompleted)
+
+        client.dispatchIncoming("""{"status":"ok"}""")
+        client.dispatchIncoming("""{"request_id":"another-request","status":"ok"}""")
+
+        assertFalse(pendingResponse.response.isCompleted)
+
+        val matchingResponse = """{"request_id":"expected-request","status":"ok"}"""
+        client.dispatchIncoming(matchingResponse)
+
+        assertEquals(matchingResponse, pendingResponse.response.await())
+        client.close()
+    }
+
+    @Test
+    fun `control commands include exact request correlation id`() {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+
+        val command = Json.parseToJsonElement(
+            client.addRequestId("""{"action":"position","partition":0}""", "request-123")
+        ).jsonObject
+
+        assertEquals("position", command["action"]?.toString()?.trim('"'))
+        assertEquals("request-123", command["request_id"]?.toString()?.trim('"'))
+        client.close()
+    }
+
+    @Test
+    fun `commitOffsets payload safely serializes hostile topic-partition keys`() {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+
+        val hostileKey = "events\"},\"admin\":true,\"x\":\"0"
+        val command = client.buildCommitOffsetsCommand(mapOf(hostileKey to 5L))
+        val jsonObject = Json.parseToJsonElement(command).jsonObject
+
+        assertEquals("commit_offsets", jsonObject["action"]?.jsonPrimitive?.content)
+        assertFalse("admin" in jsonObject)
+        val offsets = jsonObject["offsets"]!!.jsonArray
+        assertEquals(1, offsets.size)
+        assertEquals(hostileKey, offsets[0].jsonObject["topicPartition"]?.jsonPrimitive?.content)
+        assertEquals(5L, offsets[0].jsonObject["offset"]?.jsonPrimitive?.long)
+        client.close()
+    }
+
+    @Test
+    fun `unsubscribe rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.unsubscribe("bad topic!") }
+        client.close()
+    }
+
+    @Test
+    fun `seekToOffset rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.seekToOffset("bad topic!", 0, 0) }
+        client.close()
+    }
+
+    @Test
+    fun `seekToBeginning rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.seekToBeginning("bad topic!") }
+        client.close()
+    }
+
+    @Test
+    fun `seekToEnd rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.seekToEnd("bad topic!") }
+        client.close()
+    }
+
+    @Test
+    fun `position rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.position("bad topic!", 0) }
+        client.close()
+    }
+
+    @Test
+    fun `committed rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> { client.committed("bad topic!", 0) }
+        client.close()
+    }
+
+    @Test
+    fun `transactionalProduce rejects invalid topic name`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> {
+            client.transactionalProduce("bad topic!", value = "v")
+        }
+        client.close()
+    }
+
+    @Test
+    fun `subscription handler suspension does not block inbound dispatcher`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val handlerStarted = CompletableDeferred<Unit>()
+        val releaseHandler = CompletableDeferred<Unit>()
+        client.subscribe("events") {
+            handlerStarted.complete(Unit)
+            releaseHandler.await()
+        }
+
+        withTimeout(1000) {
+            client.dispatchIncoming(
+                Json.encodeToString(StreamlineMessage(topic = "events", value = "payload"))
+            )
+        }
+        withTimeout(1000) {
+            handlerStarted.await()
+        }
+
+        releaseHandler.complete(Unit)
+        client.close()
+    }
+
+    @Test
+    fun `handler cancellation does not stop later subscription delivery`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val secondDelivery = CompletableDeferred<Unit>()
+        var deliveryCount = 0
+        client.subscribe("events") {
+            deliveryCount++
+            if (deliveryCount == 1) {
+                throw CancellationException("handler timeout")
+            }
+            secondDelivery.complete(Unit)
+        }
+
+        client.dispatchIncoming(
+            Json.encodeToString(StreamlineMessage(topic = "events", value = "first"))
+        )
+        client.dispatchIncoming(
+            Json.encodeToString(StreamlineMessage(topic = "events", value = "second"))
+        )
+
+        withTimeout(1000) {
+            secondDelivery.await()
+        }
+        assertEquals(2, deliveryCount)
+        client.close()
+    }
+
+    @Test
+    fun `close fails pending control response immediately`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val pending = client.registerControlResponse("pending-request")
+
+        client.close()
+
+        assertFailsWith<NotConnectedException> {
+            pending.response.await()
+        }
+    }
+
+    // -- flushBatch: no loss / no duplication --
+
+    @Test
+    fun `flushBatch requeues all pending messages when the session is missing`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val queued = listOf(
+            StreamlineMessage(topic = "events", value = "a"),
+            StreamlineMessage(topic = "events", value = "b"),
+            StreamlineMessage(topic = "events", value = "c"),
+        )
+        client.seedPendingBatch(queued)
+
+        // No connection was ever established, so wsSession is null: this is
+        // the exact "missing session" race a dropped connection produces
+        // between a batched produce() and a later flush.
+        client.flushBatch()
+
+        assertEquals(queued, client.pendingBatch(), "messages must be preserved, not dropped")
+        client.close()
+    }
+
+    @Test
+    fun `flushBatch does not duplicate or drop when a send fails`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val messages = listOf(
+            StreamlineMessage(topic = "events", value = "1"),
+            StreamlineMessage(topic = "events", value = "2"),
+            StreamlineMessage(topic = "events", value = "3"),
+            StreamlineMessage(topic = "events", value = "4"),
+        )
+        val sent = mutableListOf<StreamlineMessage>()
+
+        val thrown = assertFailsWith<ConnectionFailedException> {
+            client.sendBatchOrRequeue(messages) { message ->
+                // First two messages succeed; the third fails permanently
+                // (as sendWithRetry does once retries are exhausted).
+                if (sent.size == 2) throw ConnectionFailedException("boom")
+                sent.add(message)
+            }
+        }
+        assertEquals("boom", thrown.message)
+
+        // Already-sent messages must never be resent...
+        assertEquals(messages.take(2), sent)
+        // ...and the failed message plus everything after it must be
+        // requeued, in original order, exactly once.
+        assertEquals(messages.drop(2), client.pendingBatch())
+        client.close()
+    }
+
+    @Test
+    fun `flushBatch requeue does not resend messages already confirmed sent`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        val messages = listOf(
+            StreamlineMessage(topic = "events", value = "1"),
+            StreamlineMessage(topic = "events", value = "2"),
+        )
+        var attempts = 0
+
+        client.sendBatchOrRequeue(messages) { attempts++ }
+
+        assertEquals(2, attempts, "every message should be sent exactly once on the happy path")
+        assertTrue(client.pendingBatch().isEmpty(), "nothing should be requeued when all sends succeed")
+        client.close()
+    }
+
+    // -- produceBatch: partition & ack-contract validation --
+
+    @Test
+    fun `produceBatch rejects a negative explicit partition before sending anything`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<IllegalArgumentException> {
+            client.produceBatch(
+                listOf(
+                    StreamlineMessage(topic = "events", value = "ok", partition = 0),
+                    StreamlineMessage(topic = "events", value = "bad", partition = -1),
+                ),
+            )
+        }
+        client.close()
+    }
+
+    @Test
+    fun `produceBatch validates every message before sending any, even while disconnected`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        // No connect() was ever called (wsSession is null), yet the
+        // partition-validation failure must still surface -- proving
+        // validation runs for the whole batch before the session is even
+        // consulted, so a single invalid entry can never cause a partial,
+        // silently-inconsistent send.
+        assertFailsWith<IllegalArgumentException> {
+            client.produceBatch(listOf(StreamlineMessage(topic = "events", value = "bad", partition = -5)))
+        }
+        client.close()
     }
 
     // -- Topic Info --
@@ -247,14 +590,14 @@ class StreamlineClientTest {
         val adminOp = AdminOperationException("admin fail")
         val queryEx = QueryException("query fail")
 
-        assertTrue(notConnected is StreamlineException)
-        assertTrue(connFailed is StreamlineException)
-        assertTrue(authFailed is StreamlineException)
-        assertTrue(timeout is StreamlineException)
-        assertTrue(notFound is StreamlineException)
-        assertTrue(queueFull is StreamlineException)
-        assertTrue(adminOp is StreamlineException)
-        assertTrue(queryEx is StreamlineException)
+        assertEquals(ErrorCode.CONNECTION, notConnected.errorCode)
+        assertEquals(ErrorCode.CONNECTION, connFailed.errorCode)
+        assertEquals(ErrorCode.AUTHENTICATION, authFailed.errorCode)
+        assertEquals(ErrorCode.TIMEOUT, timeout.errorCode)
+        assertEquals(ErrorCode.TOPIC_NOT_FOUND, notFound.errorCode)
+        assertEquals(ErrorCode.INTERNAL, queueFull.errorCode)
+        assertEquals(ErrorCode.INTERNAL, adminOp.errorCode)
+        assertEquals(ErrorCode.INTERNAL, queryEx.errorCode)
         assertNotNull(connFailed.cause)
         assertEquals("Client is not connected", notConnected.message)
         assertEquals("Topic not found: missing", notFound.message)
@@ -327,7 +670,35 @@ class StreamlineClientTest {
         assertEquals(3, config.retries)
         assertEquals(100L, config.retryBackoffMs)
         assertFalse(config.idempotent)
-        assertEquals(Acks.ONE, config.acks)
+        assertEquals(Acks.NONE, config.acks)
+        // The default configuration must always be honorable end-to-end.
+        config.validate()
+    }
+
+    @Test
+    fun `producer config rejects Acks other than NONE`() {
+        assertFailsWith<ConfigurationException> { ProducerConfig(acks = Acks.ONE).validate() }
+        assertFailsWith<ConfigurationException> { ProducerConfig(acks = Acks.ALL).validate() }
+    }
+
+    @Test
+    fun `producer config rejects idempotent production`() {
+        assertFailsWith<ConfigurationException> { ProducerConfig(idempotent = true).validate() }
+    }
+
+    @Test
+    fun `assigning an unsupported ack contract to a client is rejected immediately`() = runTest {
+        val client = StreamlineClient(StreamlineConfiguration(url = "ws://localhost:9092"))
+        assertFailsWith<ConfigurationException> {
+            client.producerConfig = ProducerConfig(acks = Acks.ALL)
+        }
+        assertFailsWith<ConfigurationException> {
+            client.producerConfig = ProducerConfig(idempotent = true)
+        }
+        // The previously-valid config must remain in effect after a rejected assignment.
+        assertEquals(Acks.NONE, client.producerConfig.acks)
+        assertFalse(client.producerConfig.idempotent)
+        client.close()
     }
 
     // -- ACL Models --
@@ -409,4 +780,3 @@ class StreamlineClientTest {
         assertTrue(msg.headers.isEmpty())
     }
 }
-

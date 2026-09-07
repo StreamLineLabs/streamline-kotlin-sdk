@@ -1,4 +1,6 @@
-> 🟢 **Beta SDK** — This SDK is feature-complete with tests and CI. For production JVM use requiring Spring Boot integration, also see the [Java SDK](https://github.com/streamlinelabs/streamline-java-sdk). Contributions welcome!
+> 🟡 **Beta SDK** — Validate the SDK against your Streamline server version
+> before production use. Live integration tests require the pinned Streamline
+> 0.4.0 server image.
 
 # Streamline Kotlin SDK
 
@@ -6,14 +8,13 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-blue.svg)](https://kotlinlang.org/)
 [![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue.svg)](https://streamlinelabs.dev/docs/sdks/kotlin)
-[![Maven Central](https://img.shields.io/maven-central/v/io.streamline/streamline-sdk.svg)](https://search.maven.org/artifact/io.streamline/streamline-sdk)
 
 Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline) — *The Redis of Streaming*.
 
 ## Requirements
 
 - Kotlin 2.0+ / JDK 17+
-- Streamline server 0.2.0 or later
+- Streamline server 0.4.0 for the full API surface
 
 ## Installation
 
@@ -21,7 +22,7 @@ Kotlin client SDK for [Streamline](https://github.com/streamlinelabs/streamline)
 
 ```kotlin
 dependencies {
-    implementation("io.streamline:streamline-kotlin-sdk:0.2.0")
+    implementation("io.streamline:streamline-kotlin-sdk:0.4.0")
 }
 ```
 
@@ -31,7 +32,7 @@ dependencies {
 <dependency>
     <groupId>io.streamline</groupId>
     <artifactId>streamline-kotlin-sdk</artifactId>
-    <version>0.2.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
@@ -71,8 +72,8 @@ client.connect()
 
 client.beginTransaction()
 try {
-    client.produce("orders", key = "k1", value = "v1")
-    client.produce("orders", key = "k2", value = "v2")
+    client.transactionalProduce("orders", key = "k1", value = "v1")
+    client.transactionalProduce("orders", key = "k2", value = "v2")
     client.commitTransaction()
 } catch (e: Exception) {
     client.abortTransaction()
@@ -185,7 +186,8 @@ tracedAdmin.query("SELECT count(*) FROM events")
 
 ## Schema Registry
 
-The SDK includes a full Schema Registry client compatible with the Confluent wire format:
+The SDK includes a Schema Registry HTTP client for Confluent-compatible
+registry operations:
 
 ```kotlin
 val registry = SchemaRegistryClient("http://localhost:9094")
@@ -209,6 +211,11 @@ registry.close()
 
 Supports **AVRO**, **PROTOBUF**, and **JSON** schema formats.
 
+`produceWithSchema` retains its 0.3.0 signature but is compatibility-validation
+only: it submits the supplied string to the registry compatibility endpoint and
+then produces that exact string. It does not validate encoded records, prepend a
+schema id, or implement Confluent wire framing.
+
 ## Security
 
 ### TLS
@@ -224,18 +231,33 @@ val config = StreamlineConfiguration(
 )
 ```
 
-### SASL Authentication
+Custom trust stores are supported. Client-certificate/mTLS fields are retained
+for source compatibility but rejected because the CIO client-certificate path
+is not wired.
+
+### Authentication
+
+Bearer tokens and HTTP Basic-compatible credentials are supported:
 
 ```kotlin
-val config = StreamlineConfiguration(
-    url = "ws://streamline.example.com:9092",
-    sasl = SaslConfig(
-        mechanism = SaslMechanism.SCRAM_SHA_256,
-        username = "admin",
-        password = "secret",
+val client = StreamlineClient(
+    configuration = StreamlineConfiguration(
+        url = "wss://streamline.example.com:9092",
+        authToken = System.getenv("STREAMLINE_TOKEN"),
     ),
 )
+
+val basicClient = StreamlineClient(
+    configuration = StreamlineConfiguration(
+        url = "wss://streamline.example.com:9092",
+    ),
+    auth = AuthConfig.PlainAuth("admin", System.getenv("STREAMLINE_PASSWORD")),
+)
 ```
+
+`SaslConfig` and `AuthConfig.ScramAuth` remain available for source
+compatibility but fail with `ConfigurationException`; SCRAM negotiation is not
+implemented by the current HTTP/WebSocket transport.
 
 ## Producer & Consumer Configuration
 
@@ -245,8 +267,7 @@ val producerConfig = ProducerConfig(
     batchSize = 32768,
     lingerMs = 5,
     compression = CompressionType.LZ4,
-    acks = Acks.ALL,
-    idempotent = true,
+    acks = Acks.NONE,
 )
 
 // Consumer tuning
@@ -258,13 +279,22 @@ val consumerConfig = ConsumerConfig(
 )
 ```
 
+`Acks.ONE`/`Acks.ALL` and `idempotent = true` are retained on `ProducerConfig`
+for source compatibility but rejected with `ConfigurationException` (both when
+`producerConfig` is assigned and again on every send): the WebSocket produce
+command has no correlated per-message broker acknowledgment, so honoring
+those settings would silently claim a delivery/deduplication guarantee the
+transport cannot verify. Only `Acks.NONE` with a non-idempotent producer is
+currently honored end-to-end.
+
 ## Features
 
 - **Ktor WebSocket** connection to Streamline server
 - **Coroutine-native** — all operations are `suspend` functions
 - **Admin client** — topic CRUD, consumer groups, SQL queries via HTTP REST API
 - **Schema Registry** — register, retrieve, and validate schemas (Avro, Protobuf, JSON)
-- **Security** — TLS encryption and SASL authentication (PLAIN, SCRAM-SHA-256/512)
+- **Security** — TLS trust stores, bearer tokens, HTTP Basic-compatible auth,
+  explicit rejection of unwired SCRAM/mTLS options, and redacted configuration output
 - **Producer/Consumer config** — batching, compression, acknowledgments, consumer groups
 - **Flow-based consumption** — idiomatic `Flow<StreamlineMessage>` for streaming
 - **Telemetry** — pluggable tracing with `ConsoleTelemetry` and W3C traceparent propagation
@@ -285,7 +315,7 @@ val consumerConfig = ConsumerConfig(
 | `initialBackoffMs` | `500` | Initial reconnection backoff (ms) |
 | `maxBackoffMs` | `30000` | Maximum backoff cap (ms) |
 | `tls` | `null` | TLS configuration (see [Security](#security)) |
-| `sasl` | `null` | SASL authentication (see [Security](#security)) |
+| `sasl` | `null` | Retained for source compatibility; non-null values are rejected |
 
 ## Error Handling
 
@@ -344,27 +374,33 @@ Protect your application from cascading failures when the Streamline server is u
 ```kotlin
 import io.streamline.sdk.CircuitBreaker
 import io.streamline.sdk.CircuitBreakerConfig
+import io.streamline.sdk.CircuitOpenException
 import io.streamline.sdk.CircuitState
+import kotlin.time.Duration.Companion.seconds
 
 val breaker = CircuitBreaker(CircuitBreakerConfig(
     failureThreshold = 5,        // Open after 5 consecutive failures
     successThreshold = 2,        // Close after 2 half-open successes
-    openTimeoutMs = 30_000L,     // 30s before probing
-    onStateChange = { from, to -> println("Circuit: $from → $to") },
+    openTimeout = 30.seconds,     // 30s before probing
 ))
 
-// Wrap a suspending operation
-val result = breaker.execute {
+try {
+    breaker.allow()
     client.produce("events", value = """{"action":"click"}""")
+    breaker.recordSuccess()
+} catch (e: CircuitOpenException) {
+    println("Circuit is open")
+} catch (e: Exception) {
+    breaker.recordFailure()
+    throw e
 }
 
-// Or check state manually
-if (breaker.state == CircuitState.OPEN) {
+if (breaker.state() == CircuitState.OPEN) {
     println("Circuit is open — requests will be rejected")
 }
 ```
 
-When the circuit is open, `execute` throws a retryable `StreamlineException`. See the [Circuit Breaker guide](https://streamlinelabs.dev/docs/features/circuit-breaker) for details.
+When the circuit is open, `allow()` throws `CircuitOpenException`.
 
 ## Examples
 
@@ -376,7 +412,7 @@ The [`examples/`](examples/) directory contains runnable examples:
 | [QueryUsage.kt](examples/QueryUsage.kt) | SQL analytics with the embedded query engine |
 | [SchemaRegistryUsage.kt](examples/SchemaRegistryUsage.kt) | Schema registration and validation |
 | [CircuitBreakerUsage.kt](examples/CircuitBreakerUsage.kt) | Resilient production with circuit breaker |
-| [SecurityUsage.kt](examples/SecurityUsage.kt) | TLS and SASL authentication |
+| [SecurityUsage.kt](examples/SecurityUsage.kt) | TLS, supported auth, and explicit unsupported-option behavior |
 
 ## Moonshot Features
 
@@ -399,8 +435,12 @@ Verify cryptographic provenance attestations attached to records by data contrac
 
 ```kotlin
 import io.streamline.sdk.StreamlineVerifier
+import java.security.KeyFactory
+import java.security.spec.X509EncodedKeySpec
 
-val verifier = StreamlineVerifier(publicKeyBytes)
+val publicKey = KeyFactory.getInstance("Ed25519")
+    .generatePublic(X509EncodedKeySpec(publicKeyBytes))
+val verifier = StreamlineVerifier(publicKey, expectedKeyId = "producer-key-1")
 val result = verifier.verify(record)
 println("Verified: ${result.verified}, Producer: ${result.producerId}")
 ```
@@ -435,4 +475,3 @@ Contributions are welcome! This is a community-maintained SDK. Please see the [o
 ## License
 
 Apache-2.0
-

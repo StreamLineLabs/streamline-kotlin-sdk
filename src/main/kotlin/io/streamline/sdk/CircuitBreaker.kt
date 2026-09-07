@@ -61,7 +61,7 @@ class CircuitBreaker(
 
     private val mutex = Mutex()
 
-    private var _state: CircuitState = CircuitState.CLOSED
+    private var currentState: CircuitState = CircuitState.CLOSED
     private var openedAtMillis: Long = 0L
     private var halfOpenRequests: Int = 0
 
@@ -77,7 +77,7 @@ class CircuitBreaker(
      */
     suspend fun allow() {
         mutex.withLock {
-            when (_state) {
+            when (currentState) {
                 CircuitState.CLOSED -> { /* always allowed */ }
                 CircuitState.OPEN -> {
                     val elapsed = clock() - openedAtMillis
@@ -105,7 +105,7 @@ class CircuitBreaker(
             consecutiveSuccesses++
             consecutiveFailures = 0
 
-            if (_state == CircuitState.HALF_OPEN && consecutiveSuccesses >= config.successThreshold) {
+            if (currentState == CircuitState.HALF_OPEN && consecutiveSuccesses >= config.successThreshold) {
                 transitionTo(CircuitState.CLOSED)
             }
         }
@@ -118,7 +118,7 @@ class CircuitBreaker(
             consecutiveFailures++
             consecutiveSuccesses = 0
 
-            when (_state) {
+            when (currentState) {
                 CircuitState.CLOSED -> {
                     if (consecutiveFailures >= config.failureThreshold) {
                         transitionTo(CircuitState.OPEN)
@@ -133,12 +133,12 @@ class CircuitBreaker(
     }
 
     /** Returns the current circuit state. */
-    suspend fun state(): CircuitState = mutex.withLock { _state }
+    suspend fun state(): CircuitState = mutex.withLock { currentState }
 
     /** Manually reset the circuit breaker to CLOSED with zeroed counters. */
     suspend fun reset() {
         mutex.withLock {
-            _state = CircuitState.CLOSED
+            currentState = CircuitState.CLOSED
             openedAtMillis = 0L
             halfOpenRequests = 0
             totalSuccesses = 0
@@ -160,7 +160,7 @@ class CircuitBreaker(
 
     // Must be called under mutex lock
     private fun transitionTo(newState: CircuitState) {
-        _state = newState
+        currentState = newState
         when (newState) {
             CircuitState.OPEN -> {
                 openedAtMillis = clock()

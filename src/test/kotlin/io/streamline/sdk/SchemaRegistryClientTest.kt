@@ -535,10 +535,8 @@ class SchemaRegistryClientTest {
     }
 
     @Test
-    fun `ScramAuth sends SCRAM header`() = runTest {
-        var capturedAuth: String? = null
-        val http = mockClient { request ->
-            capturedAuth = request.headers[HttpHeaders.Authorization]
+    fun `ScramAuth is rejected explicitly`() = runTest {
+        val http = mockClient {
             respond(
                 content = "[]",
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -550,8 +548,9 @@ class SchemaRegistryClientTest {
             auth = AuthConfig.ScramAuth("admin", "secret", ScramMechanism.SCRAM_SHA_512),
             httpClient = http,
         )
-        registry.listSubjects()
-        assertTrue(capturedAuth!!.startsWith("SCRAM SCRAM_SHA_512 "))
+        assertFailsWith<ConfigurationException> {
+            registry.listSubjects()
+        }
         registry.close()
     }
 

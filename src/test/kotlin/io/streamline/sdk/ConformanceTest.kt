@@ -83,13 +83,24 @@ class ProducerConformanceTest {
         assertEquals(0L, config.lingerMs)
         assertEquals(CompressionType.NONE, config.compression)
         assertEquals(3, config.retries)
-        assertEquals(Acks.ONE, config.acks)
+        // Acks.NONE is the only mode honored end-to-end (no correlated
+        // broker ack contract exists for the WebSocket produce command), so
+        // it is the default; Acks.ONE/ALL are rejected by validate().
+        assertEquals(Acks.NONE, config.acks)
+        config.validate()
     }
 
     @Test fun `P07 idempotent — config flag and acks`() = runTest {
         val config = ProducerConfig(idempotent = true, acks = Acks.ALL)
         assertTrue(config.idempotent)
         assertEquals(Acks.ALL, config.acks)
+
+        // Retained for source compatibility, but neither can be honored
+        // without a correlated broker ack contract: fail closed rather than
+        // silently claiming a guarantee the transport cannot verify.
+        assertFailsWith<ConfigurationException> { config.validate() }
+        assertFailsWith<ConfigurationException> { ProducerConfig(acks = Acks.ONE).validate() }
+        assertFailsWith<ConfigurationException> { ProducerConfig(idempotent = true).validate() }
     }
 
     @Test fun `P08 timeout — client configuration`() = runTest {
@@ -331,7 +342,7 @@ class AuthConformanceTest {
         assertEquals("/etc/ssl/truststore.jks", tls.trustStorePath)
     }
 
-    @Test fun `A02 mutual TLS — key store config`() = runTest {
+    @Test fun `A02 mutual TLS — unsupported key store is rejected`() = runTest {
         val tls = TlsConfig(
             enabled = true,
             trustStorePath = "/etc/ssl/truststore.jks",
@@ -339,26 +350,28 @@ class AuthConformanceTest {
             keyStorePath = "/etc/ssl/keystore.jks",
             keyStorePassword = "keypass",
         )
-        assertEquals("/etc/ssl/keystore.jks", tls.keyStorePath)
-        assertEquals("keypass", tls.keyStorePassword)
+        assertFailsWith<ConfigurationException> { tls.validate() }
     }
 
-    @Test fun `A03 SASL PLAIN — mechanism config`() = runTest {
+    @Test fun `A03 SASL PLAIN — unwired legacy config is rejected`() = runTest {
         val sasl = SaslConfig(
             mechanism = SaslMechanism.PLAIN, username = "admin", password = "secret",
         )
-        assertEquals(SaslMechanism.PLAIN, sasl.mechanism)
-        assertEquals("admin", sasl.username)
+        assertFailsWith<ConfigurationException> {
+            StreamlineConfiguration(url = "ws://localhost:9092", sasl = sasl)
+        }
     }
 
-    @Test fun `A04 SCRAM SHA256 — mechanism config`() = runTest {
-        val sasl = SaslConfig(mechanism = SaslMechanism.SCRAM_SHA_256, username = "u", password = "p")
-        assertEquals(SaslMechanism.SCRAM_SHA_256, sasl.mechanism)
+    @Test fun `A04 SCRAM SHA256 — unsupported auth is rejected`() = runTest {
+        assertFailsWith<ConfigurationException> {
+            authHeaders(AuthConfig.ScramAuth("u", "p", ScramMechanism.SCRAM_SHA_256))
+        }
     }
 
-    @Test fun `A05 SCRAM SHA512 — mechanism config`() = runTest {
-        val sasl = SaslConfig(mechanism = SaslMechanism.SCRAM_SHA_512, username = "u", password = "p")
-        assertEquals(SaslMechanism.SCRAM_SHA_512, sasl.mechanism)
+    @Test fun `A05 SCRAM SHA512 — unsupported auth is rejected`() = runTest {
+        assertFailsWith<ConfigurationException> {
+            authHeaders(AuthConfig.ScramAuth("u", "p", ScramMechanism.SCRAM_SHA_512))
+        }
     }
 
     @Test fun `A06 auth failure — admin 401 throws AuthenticationFailedException`() = runTest {
@@ -456,7 +469,7 @@ class ErrorConformanceTest {
 
     @Test fun `E02 invalid partition — error hierarchy`() = runTest {
         val ex = StreamlineException("Invalid partition: -1")
-        assertTrue(ex is Exception)
+        assertEquals(ErrorCode.INTERNAL, ex.errorCode)
         assertEquals("Invalid partition: -1", ex.message)
     }
 
@@ -466,10 +479,10 @@ class ErrorConformanceTest {
         val timeout = StreamlineTimeoutException()
         val queueFull = OfflineQueueFullException()
 
-        assertTrue(notConnected is StreamlineException)
-        assertTrue(connFailed is StreamlineException)
-        assertTrue(timeout is StreamlineException)
-        assertTrue(queueFull is StreamlineException)
+        assertEquals(ErrorCode.CONNECTION, notConnected.errorCode)
+        assertEquals(ErrorCode.CONNECTION, connFailed.errorCode)
+        assertEquals(ErrorCode.TIMEOUT, timeout.errorCode)
+        assertEquals(ErrorCode.INTERNAL, queueFull.errorCode)
 
         assertEquals("Client is not connected", notConnected.message)
         assertEquals("Operation timed out", timeout.message)
@@ -483,11 +496,11 @@ class ErrorConformanceTest {
         val queryErr = QueryException("syntax error", null)
         val schemaErr = SchemaRegistryException("not found", null)
 
-        assertTrue(topicErr is StreamlineException)
-        assertTrue(authErr is StreamlineException)
-        assertTrue(adminErr is StreamlineException)
-        assertTrue(queryErr is StreamlineException)
-        assertTrue(schemaErr is StreamlineException)
+        assertFalse(topicErr.isRetryable())
+        assertFalse(authErr.isRetryable())
+        assertTrue(adminErr.isRetryable())
+        assertTrue(queryErr.isRetryable())
+        assertFalse(schemaErr.isRetryable())
 
         assertTrue(topicErr.message!!.contains("events"))
         assertTrue(authErr.message!!.contains("bad creds"))
@@ -527,7 +540,6 @@ class PerformanceConformanceTest {
             StreamlineConfiguration(
                 url = "ws://localhost:9092", autoReconnect = true, maxRetries = 10,
                 tls = TlsConfig(enabled = true),
-                sasl = SaslConfig(mechanism = SaslMechanism.SCRAM_SHA_256, username = "u", password = "p"),
             )
             System.nanoTime() - start
         }.sorted()

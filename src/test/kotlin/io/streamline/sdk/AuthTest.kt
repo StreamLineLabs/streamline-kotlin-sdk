@@ -146,10 +146,8 @@ class AuthTest {
     }
 
     @Test
-    fun `AdminClient with ScramAuth sends SCRAM header`() = runTest {
-        var capturedAuth: String? = null
-        val http = mockClient { request ->
-            capturedAuth = request.headers[HttpHeaders.Authorization]
+    fun `AdminClient rejects unsupported ScramAuth`() = runTest {
+        val http = mockClient {
             respond(
                 content = "[]",
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -161,13 +159,10 @@ class AuthTest {
             auth = AuthConfig.ScramAuth("admin", "secret", ScramMechanism.SCRAM_SHA_512),
             httpClient = http,
         )
-        admin.listTopics()
 
-        assertNotNull(capturedAuth)
-        assertTrue(capturedAuth!!.startsWith("SCRAM SCRAM_SHA_512 "))
-        val encoded = capturedAuth!!.removePrefix("SCRAM SCRAM_SHA_512 ")
-        val decoded = String(Base64.getDecoder().decode(encoded))
-        assertEquals("admin:secret", decoded)
+        assertFailsWith<ConfigurationException> {
+            admin.listTopics()
+        }
         admin.close()
     }
 
@@ -253,10 +248,10 @@ class AuthTest {
     }
 
     @Test
-    fun `authHeaders returns SCRAM for ScramAuth`() = runTest {
-        val headers = authHeaders(AuthConfig.ScramAuth("user", "pass", ScramMechanism.SCRAM_SHA_256))
-        assertEquals(1, headers.size)
-        assertTrue(headers["Authorization"]!!.startsWith("SCRAM SCRAM_SHA_256 "))
+    fun `authHeaders rejects ScramAuth`() = runTest {
+        assertFailsWith<ConfigurationException> {
+            authHeaders(AuthConfig.ScramAuth("user", "pass", ScramMechanism.SCRAM_SHA_256))
+        }
     }
 
     @Test
@@ -266,6 +261,34 @@ class AuthTest {
         })
         assertEquals(1, headers.size)
         assertEquals("Bearer token123", headers["Authorization"])
+    }
+
+    @Test
+    fun `expired OAuth bearer token is rejected`() = runTest {
+        assertFailsWith<AuthenticationFailedException> {
+            authHeaders(AuthConfig.OAuthBearerAuth {
+                OAuthToken("expired-token", System.currentTimeMillis() - 1)
+            })
+        }
+    }
+
+    @Test
+    fun `secret-bearing auth models redact toString`() {
+        val plain = AuthConfig.PlainAuth("admin", "plain-secret").toString()
+        val scram = AuthConfig.ScramAuth("admin", "scram-secret").toString()
+        val oauth = OAuthToken("oauth-secret", Long.MAX_VALUE).toString()
+        val provider = AuthConfig.OAuthBearerAuth {
+            OAuthToken("provider-secret", Long.MAX_VALUE)
+        }.toString()
+
+        assertFalse(plain.contains("plain-secret"))
+        assertFalse(scram.contains("scram-secret"))
+        assertFalse(oauth.contains("oauth-secret"))
+        assertFalse(provider.contains("provider-secret"))
+        assertTrue(plain.contains("[REDACTED]"))
+        assertTrue(scram.contains("[REDACTED]"))
+        assertTrue(oauth.contains("[REDACTED]"))
+        assertTrue(provider.contains("[REDACTED]"))
     }
 
     // -- StreamlineClient auth parameter --

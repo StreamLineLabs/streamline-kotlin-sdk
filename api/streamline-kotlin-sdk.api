@@ -1,0 +1,1541 @@
+public final class io/streamline/sdk/Acks : java/lang/Enum {
+	public static final field ALL Lio/streamline/sdk/Acks;
+	public static final field NONE Lio/streamline/sdk/Acks;
+	public static final field ONE Lio/streamline/sdk/Acks;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/Acks;
+	public static fun values ()[Lio/streamline/sdk/Acks;
+}
+
+public final class io/streamline/sdk/AclEntry {
+	public static final field Companion Lio/streamline/sdk/AclEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/streamline/sdk/AclEntry;
+	public static synthetic fun copy$default (Lio/streamline/sdk/AclEntry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/AclEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getPermission ()Ljava/lang/String;
+	public final fun getPrincipal ()Ljava/lang/String;
+	public final fun getResourceName ()Ljava/lang/String;
+	public final fun getResourceType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/AclEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/AclEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/AclEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/AclEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/AclEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/AclOperation : java/lang/Enum {
+	public static final field ALL Lio/streamline/sdk/AclOperation;
+	public static final field ALTER Lio/streamline/sdk/AclOperation;
+	public static final field CREATE Lio/streamline/sdk/AclOperation;
+	public static final field DELETE Lio/streamline/sdk/AclOperation;
+	public static final field DESCRIBE Lio/streamline/sdk/AclOperation;
+	public static final field READ Lio/streamline/sdk/AclOperation;
+	public static final field WRITE Lio/streamline/sdk/AclOperation;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/AclOperation;
+	public static fun values ()[Lio/streamline/sdk/AclOperation;
+}
+
+public final class io/streamline/sdk/AclPermission : java/lang/Enum {
+	public static final field ALLOW Lio/streamline/sdk/AclPermission;
+	public static final field DENY Lio/streamline/sdk/AclPermission;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/AclPermission;
+	public static fun values ()[Lio/streamline/sdk/AclPermission;
+}
+
+public final class io/streamline/sdk/AclResourceType : java/lang/Enum {
+	public static final field CLUSTER Lio/streamline/sdk/AclResourceType;
+	public static final field GROUP Lio/streamline/sdk/AclResourceType;
+	public static final field TOPIC Lio/streamline/sdk/AclResourceType;
+	public static final field TRANSACTIONAL_ID Lio/streamline/sdk/AclResourceType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/AclResourceType;
+	public static fun values ()[Lio/streamline/sdk/AclResourceType;
+}
+
+public final class io/streamline/sdk/AdminClient {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/AuthConfig;Lio/streamline/sdk/TlsConfig;Lio/ktor/client/HttpClient;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/AuthConfig;Lio/streamline/sdk/TlsConfig;Lio/ktor/client/HttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun close ()V
+	public final fun clusterInfo (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun commitOffsets (Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun consumerGroupLag (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun consumerGroupTopicLag (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun createAcl (Ljava/lang/String;Lio/streamline/sdk/AclResourceType;Ljava/lang/String;Lio/streamline/sdk/AclOperation;Lio/streamline/sdk/AclPermission;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun createAcl$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;Lio/streamline/sdk/AclResourceType;Ljava/lang/String;Lio/streamline/sdk/AclOperation;Lio/streamline/sdk/AclPermission;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun createTopic (Ljava/lang/String;IILjava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun createTopic$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;IILjava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun deleteAcl (Ljava/lang/String;Lio/streamline/sdk/AclResourceType;Ljava/lang/String;Lio/streamline/sdk/AclOperation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun deleteConsumerGroup (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun deleteTopic (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun describeConsumerGroup (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun describeTopic (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getOffsets (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getOffsets$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun inspectMessages (Ljava/lang/String;ILjava/lang/Long;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun inspectMessages$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;ILjava/lang/Long;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun isHealthy (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun latestMessages (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun latestMessages$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun listAcls (Lio/streamline/sdk/AclResourceType;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun listAcls$default (Lio/streamline/sdk/AdminClient;Lio/streamline/sdk/AclResourceType;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun listBrokers (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listConsumerGroups (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listReassignments (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listTopics (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun metricsHistory (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun query (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reassignPartitions (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetOffsets (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun resetOffsets$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun resetOffsetsDryRun (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun resetOffsetsDryRun$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun search (Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun search$default (Lio/streamline/sdk/AdminClient;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun serverInfo (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/AdminOperationException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/AttestationVerificationException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public abstract class io/streamline/sdk/AuthConfig {
+}
+
+public final class io/streamline/sdk/AuthConfig$OAuthBearerAuth : io/streamline/sdk/AuthConfig {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun component1 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Lkotlin/jvm/functions/Function1;)Lio/streamline/sdk/AuthConfig$OAuthBearerAuth;
+	public static synthetic fun copy$default (Lio/streamline/sdk/AuthConfig$OAuthBearerAuth;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/streamline/sdk/AuthConfig$OAuthBearerAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTokenProvider ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/AuthConfig$PlainAuth : io/streamline/sdk/AuthConfig {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/streamline/sdk/AuthConfig$PlainAuth;
+	public static synthetic fun copy$default (Lio/streamline/sdk/AuthConfig$PlainAuth;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/AuthConfig$PlainAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/AuthConfig$ScramAuth : io/streamline/sdk/AuthConfig {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/ScramMechanism;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/ScramMechanism;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/streamline/sdk/ScramMechanism;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/ScramMechanism;)Lio/streamline/sdk/AuthConfig$ScramAuth;
+	public static synthetic fun copy$default (Lio/streamline/sdk/AuthConfig$ScramAuth;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/ScramMechanism;ILjava/lang/Object;)Lio/streamline/sdk/AuthConfig$ScramAuth;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMechanism ()Lio/streamline/sdk/ScramMechanism;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/AuthenticationFailedException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/AuthorizationFailedException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/BranchQuotaExceededException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/BrokerInfo {
+	public static final field Companion Lio/streamline/sdk/BrokerInfo$Companion;
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/String;ILjava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;ILjava/lang/String;)Lio/streamline/sdk/BrokerInfo;
+	public static synthetic fun copy$default (Lio/streamline/sdk/BrokerInfo;ILjava/lang/String;ILjava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/BrokerInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getId ()I
+	public final fun getPort ()I
+	public final fun getRack ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/BrokerInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/BrokerInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/BrokerInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/BrokerInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/BrokerInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/CircuitBreaker {
+	public fun <init> ()V
+	public fun <init> (Lio/streamline/sdk/CircuitBreakerConfig;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lio/streamline/sdk/CircuitBreakerConfig;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun allow (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun counts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun recordFailure (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun recordSuccess (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reset (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun state (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/CircuitBreakerConfig {
+	public synthetic fun <init> (IIJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3-UwyO8pc ()J
+	public final fun component4 ()I
+	public final fun copy-exY8QGI (IIJI)Lio/streamline/sdk/CircuitBreakerConfig;
+	public static synthetic fun copy-exY8QGI$default (Lio/streamline/sdk/CircuitBreakerConfig;IIJIILjava/lang/Object;)Lio/streamline/sdk/CircuitBreakerConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailureThreshold ()I
+	public final fun getHalfOpenMaxRequests ()I
+	public final fun getOpenTimeout-UwyO8pc ()J
+	public final fun getSuccessThreshold ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/CircuitBreakerCounts {
+	public fun <init> (JJII)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (JJII)Lio/streamline/sdk/CircuitBreakerCounts;
+	public static synthetic fun copy$default (Lio/streamline/sdk/CircuitBreakerCounts;JJIIILjava/lang/Object;)Lio/streamline/sdk/CircuitBreakerCounts;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsecutiveFailures ()I
+	public final fun getConsecutiveSuccesses ()I
+	public final fun getTotalFailures ()J
+	public final fun getTotalSuccesses ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/CircuitOpenException : io/streamline/sdk/StreamlineException {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/CircuitState : java/lang/Enum {
+	public static final field CLOSED Lio/streamline/sdk/CircuitState;
+	public static final field HALF_OPEN Lio/streamline/sdk/CircuitState;
+	public static final field OPEN Lio/streamline/sdk/CircuitState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/CircuitState;
+	public static fun values ()[Lio/streamline/sdk/CircuitState;
+}
+
+public final class io/streamline/sdk/ClientMetricsSnapshot {
+	public fun <init> (JJJDJJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()D
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun copy (JJJDJJ)Lio/streamline/sdk/ClientMetricsSnapshot;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ClientMetricsSnapshot;JJJDJJILjava/lang/Object;)Lio/streamline/sdk/ClientMetricsSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConsumeBytes ()J
+	public final fun getConsumeCount ()J
+	public final fun getProduceAvgLatencyMs ()D
+	public final fun getProduceBytes ()J
+	public final fun getProduceCount ()J
+	public final fun getProduceErrors ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/ClusterInfo {
+	public static final field Companion Lio/streamline/sdk/ClusterInfo$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ILjava/util/List;I)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/util/List;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/String;ILjava/util/List;I)Lio/streamline/sdk/ClusterInfo;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ClusterInfo;Ljava/lang/String;ILjava/util/List;IILjava/lang/Object;)Lio/streamline/sdk/ClusterInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBrokerId ()I
+	public final fun getBrokers ()Ljava/util/List;
+	public final fun getClusterId ()Ljava/lang/String;
+	public final fun getController ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ClusterInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ClusterInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ClusterInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ClusterInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ClusterInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/CompatibilityLevel : java/lang/Enum {
+	public static final field BACKWARD Lio/streamline/sdk/CompatibilityLevel;
+	public static final field BACKWARD_TRANSITIVE Lio/streamline/sdk/CompatibilityLevel;
+	public static final field FORWARD Lio/streamline/sdk/CompatibilityLevel;
+	public static final field FORWARD_TRANSITIVE Lio/streamline/sdk/CompatibilityLevel;
+	public static final field FULL Lio/streamline/sdk/CompatibilityLevel;
+	public static final field FULL_TRANSITIVE Lio/streamline/sdk/CompatibilityLevel;
+	public static final field NONE Lio/streamline/sdk/CompatibilityLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/CompatibilityLevel;
+	public static fun values ()[Lio/streamline/sdk/CompatibilityLevel;
+}
+
+public final class io/streamline/sdk/CompressionType : java/lang/Enum {
+	public static final field GZIP Lio/streamline/sdk/CompressionType;
+	public static final field LZ4 Lio/streamline/sdk/CompressionType;
+	public static final field NONE Lio/streamline/sdk/CompressionType;
+	public static final field SNAPPY Lio/streamline/sdk/CompressionType;
+	public static final field ZSTD Lio/streamline/sdk/CompressionType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/CompressionType;
+	public static fun values ()[Lio/streamline/sdk/CompressionType;
+}
+
+public final class io/streamline/sdk/ConfigurationException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/ConnectionFailedException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/ConnectionState : java/lang/Enum {
+	public static final field CONNECTED Lio/streamline/sdk/ConnectionState;
+	public static final field CONNECTING Lio/streamline/sdk/ConnectionState;
+	public static final field DISCONNECTED Lio/streamline/sdk/ConnectionState;
+	public static final field RECONNECTING Lio/streamline/sdk/ConnectionState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/ConnectionState;
+	public static fun values ()[Lio/streamline/sdk/ConnectionState;
+}
+
+public final class io/streamline/sdk/ConsoleTelemetry : io/streamline/sdk/Telemetry {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun startSpan (Ljava/lang/String;Ljava/util/Map;)Lio/streamline/sdk/SpanHandle;
+	public fun traceparent ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/ConsumerConfig {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ZJJJILio/streamline/sdk/OffsetReset;)V
+	public synthetic fun <init> (Ljava/lang/String;ZJJJILio/streamline/sdk/OffsetReset;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()Lio/streamline/sdk/OffsetReset;
+	public final fun copy (Ljava/lang/String;ZJJJILio/streamline/sdk/OffsetReset;)Lio/streamline/sdk/ConsumerConfig;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerConfig;Ljava/lang/String;ZJJJILio/streamline/sdk/OffsetReset;ILjava/lang/Object;)Lio/streamline/sdk/ConsumerConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAutoCommit ()Z
+	public final fun getAutoCommitIntervalMs ()J
+	public final fun getAutoOffsetReset ()Lio/streamline/sdk/OffsetReset;
+	public final fun getGroupId ()Ljava/lang/String;
+	public final fun getHeartbeatIntervalMs ()J
+	public final fun getMaxPollRecords ()I
+	public final fun getSessionTimeoutMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/ConsumerGroup {
+	public static final field Companion Lio/streamline/sdk/ConsumerGroup$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lio/streamline/sdk/ConsumerGroup;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerGroup;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/ConsumerGroup;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMembers ()Ljava/util/List;
+	public final fun getState ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ConsumerGroup$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ConsumerGroup$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ConsumerGroup;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ConsumerGroup;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroup$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupDescription {
+	public static final field Companion Lio/streamline/sdk/ConsumerGroupDescription$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lio/streamline/sdk/ConsumerGroupDescription;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerGroupDescription;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/ConsumerGroupDescription;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMembers ()Ljava/util/List;
+	public final fun getProtocol ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ConsumerGroupDescription$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ConsumerGroupDescription$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ConsumerGroupDescription;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ConsumerGroupDescription;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupDescription$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupLag {
+	public static final field Companion Lio/streamline/sdk/ConsumerGroupLag$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;J)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/util/List;J)Lio/streamline/sdk/ConsumerGroupLag;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerGroupLag;Ljava/lang/String;Ljava/util/List;JILjava/lang/Object;)Lio/streamline/sdk/ConsumerGroupLag;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGroupId ()Ljava/lang/String;
+	public final fun getPartitions ()Ljava/util/List;
+	public final fun getTotalLag ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ConsumerGroupLag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ConsumerGroupLag$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ConsumerGroupLag;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ConsumerGroupLag;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupLag$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupMember {
+	public static final field Companion Lio/streamline/sdk/ConsumerGroupMember$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)Lio/streamline/sdk/ConsumerGroupMember;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerGroupMember;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/streamline/sdk/ConsumerGroupMember;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssignments ()Ljava/util/List;
+	public final fun getClientId ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ConsumerGroupMember$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ConsumerGroupMember$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ConsumerGroupMember;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ConsumerGroupMember;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerGroupMember$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerLag {
+	public static final field Companion Lio/streamline/sdk/ConsumerLag$Companion;
+	public fun <init> (Ljava/lang/String;IJJJ)V
+	public synthetic fun <init> (Ljava/lang/String;IJJJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;IJJJ)Lio/streamline/sdk/ConsumerLag;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ConsumerLag;Ljava/lang/String;IJJJILjava/lang/Object;)Lio/streamline/sdk/ConsumerLag;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentOffset ()J
+	public final fun getEndOffset ()J
+	public final fun getLag ()J
+	public final fun getPartition ()I
+	public final fun getTopic ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ConsumerLag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ConsumerLag$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ConsumerLag;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ConsumerLag;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ConsumerLag$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ContractViolationException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/CreateTopicRequest {
+	public fun <init> (Ljava/lang/String;IILjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;IILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;IILjava/util/Map;)Lio/streamline/sdk/CreateTopicRequest;
+	public static synthetic fun copy$default (Lio/streamline/sdk/CreateTopicRequest;Ljava/lang/String;IILjava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/CreateTopicRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfig ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPartitions ()I
+	public final fun getReplicationFactor ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/ErrorCode : java/lang/Enum {
+	public static final field ATTESTATION_FAILED Lio/streamline/sdk/ErrorCode;
+	public static final field AUTHENTICATION Lio/streamline/sdk/ErrorCode;
+	public static final field AUTHORIZATION Lio/streamline/sdk/ErrorCode;
+	public static final field BRANCH_QUOTA_EXCEEDED Lio/streamline/sdk/ErrorCode;
+	public static final field CIRCUIT_OPEN Lio/streamline/sdk/ErrorCode;
+	public static final field CONFIGURATION Lio/streamline/sdk/ErrorCode;
+	public static final field CONNECTION Lio/streamline/sdk/ErrorCode;
+	public static final field CONTRACT_VIOLATION Lio/streamline/sdk/ErrorCode;
+	public static final field INTERNAL Lio/streamline/sdk/ErrorCode;
+	public static final field MEMORY_ACCESS_DENIED Lio/streamline/sdk/ErrorCode;
+	public static final field PARTITION_NOT_FOUND Lio/streamline/sdk/ErrorCode;
+	public static final field PROTOCOL Lio/streamline/sdk/ErrorCode;
+	public static final field SCHEMA Lio/streamline/sdk/ErrorCode;
+	public static final field SEMANTIC_SEARCH_UNAVAILABLE Lio/streamline/sdk/ErrorCode;
+	public static final field SERIALIZATION Lio/streamline/sdk/ErrorCode;
+	public static final field TIMEOUT Lio/streamline/sdk/ErrorCode;
+	public static final field TOPIC_NOT_FOUND Lio/streamline/sdk/ErrorCode;
+	public final fun getDefaultRetryable ()Z
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/ErrorCode;
+	public static fun values ()[Lio/streamline/sdk/ErrorCode;
+}
+
+public final class io/streamline/sdk/InspectedMessage {
+	public static final field Companion Lio/streamline/sdk/InspectedMessage$Companion;
+	public fun <init> (JLjava/lang/String;Ljava/lang/String;JILjava/util/Map;)V
+	public synthetic fun <init> (JLjava/lang/String;Ljava/lang/String;JILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()J
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/util/Map;
+	public final fun copy (JLjava/lang/String;Ljava/lang/String;JILjava/util/Map;)Lio/streamline/sdk/InspectedMessage;
+	public static synthetic fun copy$default (Lio/streamline/sdk/InspectedMessage;JLjava/lang/String;Ljava/lang/String;JILjava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/InspectedMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getOffset ()J
+	public final fun getPartition ()I
+	public final fun getTimestamp ()J
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/InspectedMessage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/InspectedMessage$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/InspectedMessage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/InspectedMessage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/InspectedMessage$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/MemoryAccessDeniedException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class io/streamline/sdk/MessageSerializer {
+	public abstract fun deserialize (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+	public abstract fun serialize (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/MetricPoint {
+	public static final field Companion Lio/streamline/sdk/MetricPoint$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;DLjava/util/Map;J)V
+	public synthetic fun <init> (Ljava/lang/String;DLjava/util/Map;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()D
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;DLjava/util/Map;J)Lio/streamline/sdk/MetricPoint;
+	public static synthetic fun copy$default (Lio/streamline/sdk/MetricPoint;Ljava/lang/String;DLjava/util/Map;JILjava/lang/Object;)Lio/streamline/sdk/MetricPoint;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLabels ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTimestamp ()J
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/MetricPoint$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/MetricPoint$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/MetricPoint;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/MetricPoint;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/MetricPoint$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/NotConnectedException : io/streamline/sdk/StreamlineException {
+	public fun <init> ()V
+}
+
+public final class io/streamline/sdk/OAuthToken {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Lio/streamline/sdk/OAuthToken;
+	public static synthetic fun copy$default (Lio/streamline/sdk/OAuthToken;Ljava/lang/String;JILjava/lang/Object;)Lio/streamline/sdk/OAuthToken;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpiresAtMs ()J
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isExpired ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/OfflineQueueFullException : io/streamline/sdk/StreamlineException {
+	public fun <init> ()V
+}
+
+public final class io/streamline/sdk/OffsetReset : java/lang/Enum {
+	public static final field EARLIEST Lio/streamline/sdk/OffsetReset;
+	public static final field LATEST Lio/streamline/sdk/OffsetReset;
+	public static final field NONE Lio/streamline/sdk/OffsetReset;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/OffsetReset;
+	public static fun values ()[Lio/streamline/sdk/OffsetReset;
+}
+
+public final class io/streamline/sdk/PartitionNotFoundException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;I)V
+}
+
+public final class io/streamline/sdk/ProducerConfig {
+	public fun <init> ()V
+	public fun <init> (IJLio/streamline/sdk/CompressionType;IJZLio/streamline/sdk/Acks;)V
+	public synthetic fun <init> (IJLio/streamline/sdk/CompressionType;IJZLio/streamline/sdk/Acks;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()Lio/streamline/sdk/CompressionType;
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()Z
+	public final fun component7 ()Lio/streamline/sdk/Acks;
+	public final fun copy (IJLio/streamline/sdk/CompressionType;IJZLio/streamline/sdk/Acks;)Lio/streamline/sdk/ProducerConfig;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ProducerConfig;IJLio/streamline/sdk/CompressionType;IJZLio/streamline/sdk/Acks;ILjava/lang/Object;)Lio/streamline/sdk/ProducerConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAcks ()Lio/streamline/sdk/Acks;
+	public final fun getBatchSize ()I
+	public final fun getCompression ()Lio/streamline/sdk/CompressionType;
+	public final fun getIdempotent ()Z
+	public final fun getLingerMs ()J
+	public final fun getRetries ()I
+	public final fun getRetryBackoffMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun validate ()V
+}
+
+public final class io/streamline/sdk/ProtocolException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/QueryException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/QueryResult {
+	public static final field Companion Lio/streamline/sdk/QueryResult$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;I)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()I
+	public final fun copy (Ljava/util/List;Ljava/util/List;I)Lio/streamline/sdk/QueryResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/QueryResult;Ljava/util/List;Ljava/util/List;IILjava/lang/Object;)Lio/streamline/sdk/QueryResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumns ()Ljava/util/List;
+	public final fun getRowCount ()I
+	public final fun getRows ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/QueryResult$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/QueryResult$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/QueryResult;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/QueryResult;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/QueryResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ReassignmentStatus {
+	public static final field Companion Lio/streamline/sdk/ReassignmentStatus$Companion;
+	public fun <init> (Ljava/lang/String;ILjava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;ILjava/util/List;Ljava/util/List;Ljava/util/List;)Lio/streamline/sdk/ReassignmentStatus;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ReassignmentStatus;Ljava/lang/String;ILjava/util/List;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/streamline/sdk/ReassignmentStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddingReplicas ()Ljava/util/List;
+	public final fun getPartition ()I
+	public final fun getRemovingReplicas ()Ljava/util/List;
+	public final fun getReplicas ()Ljava/util/List;
+	public final fun getTopic ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ReassignmentStatus$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ReassignmentStatus$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ReassignmentStatus;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ReassignmentStatus;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ReassignmentStatus$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/SaslConfig {
+	public fun <init> (Lio/streamline/sdk/SaslMechanism;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/streamline/sdk/SaslMechanism;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/streamline/sdk/SaslMechanism;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lio/streamline/sdk/SaslMechanism;Ljava/lang/String;Ljava/lang/String;)Lio/streamline/sdk/SaslConfig;
+	public static synthetic fun copy$default (Lio/streamline/sdk/SaslConfig;Lio/streamline/sdk/SaslMechanism;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/SaslConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMechanism ()Lio/streamline/sdk/SaslMechanism;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/SaslMechanism : java/lang/Enum {
+	public static final field PLAIN Lio/streamline/sdk/SaslMechanism;
+	public static final field SCRAM_SHA_256 Lio/streamline/sdk/SaslMechanism;
+	public static final field SCRAM_SHA_512 Lio/streamline/sdk/SaslMechanism;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/SaslMechanism;
+	public static fun values ()[Lio/streamline/sdk/SaslMechanism;
+}
+
+public final class io/streamline/sdk/SchemaFormat : java/lang/Enum {
+	public static final field AVRO Lio/streamline/sdk/SchemaFormat;
+	public static final field JSON Lio/streamline/sdk/SchemaFormat;
+	public static final field PROTOBUF Lio/streamline/sdk/SchemaFormat;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/SchemaFormat;
+	public static fun values ()[Lio/streamline/sdk/SchemaFormat;
+}
+
+public final class io/streamline/sdk/SchemaInfo {
+	public static final field Companion Lio/streamline/sdk/SchemaInfo$Companion;
+	public fun <init> (Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;)Lio/streamline/sdk/SchemaInfo;
+	public static synthetic fun copy$default (Lio/streamline/sdk/SchemaInfo;Ljava/lang/String;IILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/SchemaInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()I
+	public final fun getSchema ()Ljava/lang/String;
+	public final fun getSchemaType ()Ljava/lang/String;
+	public final fun getSubject ()Ljava/lang/String;
+	public final fun getVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/SchemaInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/SchemaInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/SchemaInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/SchemaInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/SchemaInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/SchemaRegistryClient {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun checkCompatibility (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun checkCompatibility$default (Lio/streamline/sdk/SchemaRegistryClient;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun clearCache ()V
+	public final fun close ()V
+	public final fun deleteSubject (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCompatibilityLevel (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getLatestSchema (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getSchema (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getSchemaById (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getSchemaVersion (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listSubjects (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listVersions (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun registerSchema (Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun registerSchema$default (Lio/streamline/sdk/SchemaRegistryClient;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun setCompatibilityLevel (Ljava/lang/String;Lio/streamline/sdk/CompatibilityLevel;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/SchemaRegistryException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/ScramMechanism : java/lang/Enum {
+	public static final field SCRAM_SHA_256 Lio/streamline/sdk/ScramMechanism;
+	public static final field SCRAM_SHA_512 Lio/streamline/sdk/ScramMechanism;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/ScramMechanism;
+	public static fun values ()[Lio/streamline/sdk/ScramMechanism;
+}
+
+public final class io/streamline/sdk/SearchResult {
+	public static final field Companion Lio/streamline/sdk/SearchResult$Companion;
+	public fun <init> (IJDLjava/lang/String;)V
+	public synthetic fun <init> (IJDLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()D
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (IJDLjava/lang/String;)Lio/streamline/sdk/SearchResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/SearchResult;IJDLjava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/SearchResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOffset ()J
+	public final fun getPartition ()I
+	public final fun getScore ()D
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/SearchResult$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/SearchResult$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/SearchResult;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/SearchResult;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/SearchResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/SemanticSearchUnavailableException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/SerializationException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/ServerInfo {
+	public static final field Companion Lio/streamline/sdk/ServerInfo$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;JIJ)V
+	public synthetic fun <init> (Ljava/lang/String;JIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;JIJ)Lio/streamline/sdk/ServerInfo;
+	public static synthetic fun copy$default (Lio/streamline/sdk/ServerInfo;Ljava/lang/String;JIJILjava/lang/Object;)Lio/streamline/sdk/ServerInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessageCount ()J
+	public final fun getTopicCount ()I
+	public final fun getUptime ()J
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/ServerInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/ServerInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/ServerInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/ServerInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/ServerInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class io/streamline/sdk/SpanHandle {
+	public abstract fun end ()V
+	public abstract fun setAttribute (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun setError (Ljava/lang/Throwable;)V
+}
+
+public final class io/streamline/sdk/StreamlineClient {
+	public fun <init> (Lio/streamline/sdk/StreamlineConfiguration;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;Lio/streamline/sdk/SchemaRegistryClient;)V
+	public synthetic fun <init> (Lio/streamline/sdk/StreamlineConfiguration;Lio/streamline/sdk/AuthConfig;Lio/ktor/client/HttpClient;Lio/streamline/sdk/SchemaRegistryClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun abortTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun beginTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close ()V
+	public final fun commitOffsets (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun commitTransaction (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun committed (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun disconnect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun flushBatch (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getConsumerConfig ()Lio/streamline/sdk/ConsumerConfig;
+	public final fun getMetrics ()Lio/streamline/sdk/ClientMetricsSnapshot;
+	public final fun getProducerConfig ()Lio/streamline/sdk/ProducerConfig;
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun messages (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+	public final fun poll (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun poll$default (Lio/streamline/sdk/StreamlineClient;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun position (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun produce (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun produce$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun produceBatch (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun produceWithSchema (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun produceWithSchema$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/streamline/sdk/SchemaFormat;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun seekToBeginning (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun seekToEnd (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun seekToOffset (Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setConsumerConfig (Lio/streamline/sdk/ConsumerConfig;)V
+	public final fun setProducerConfig (Lio/streamline/sdk/ProducerConfig;)V
+	public final fun subscribe (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun transactionalProduce (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transactionalProduce$default (Lio/streamline/sdk/StreamlineClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/StreamlineClient$ProduceResult {
+	public fun <init> (IILjava/util/Map;)V
+	public synthetic fun <init> (IILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (IILjava/util/Map;)Lio/streamline/sdk/StreamlineClient$ProduceResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/StreamlineClient$ProduceResult;IILjava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/StreamlineClient$ProduceResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/Map;
+	public final fun getFailureCount ()I
+	public final fun getSuccessCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/StreamlineConfiguration {
+	public fun <init> (Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;)V
+	public synthetic fun <init> (Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()Lio/streamline/sdk/TlsConfig;
+	public final fun component9 ()Lio/streamline/sdk/SaslConfig;
+	public final fun copy (Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;)Lio/streamline/sdk/StreamlineConfiguration;
+	public static synthetic fun copy$default (Lio/streamline/sdk/StreamlineConfiguration;Ljava/lang/String;ZIJLjava/lang/String;JJLio/streamline/sdk/TlsConfig;Lio/streamline/sdk/SaslConfig;ILjava/lang/Object;)Lio/streamline/sdk/StreamlineConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthToken ()Ljava/lang/String;
+	public final fun getAutoReconnect ()Z
+	public final fun getInitialBackoffMs ()J
+	public final fun getMaxBackoffMs ()J
+	public final fun getMaxRetries ()I
+	public final fun getSasl ()Lio/streamline/sdk/SaslConfig;
+	public final fun getTimeoutMs ()J
+	public final fun getTls ()Lio/streamline/sdk/TlsConfig;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class io/streamline/sdk/StreamlineException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lio/streamline/sdk/ErrorCode;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lio/streamline/sdk/ErrorCode;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getErrorCode ()Lio/streamline/sdk/ErrorCode;
+	public final fun getHint ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public final fun isRetryable ()Z
+}
+
+public final class io/streamline/sdk/StreamlineMessage {
+	public static final field Companion Lio/streamline/sdk/StreamlineMessage$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun component7 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/Map;)Lio/streamline/sdk/StreamlineMessage;
+	public static synthetic fun copy$default (Lio/streamline/sdk/StreamlineMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/StreamlineMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getOffset ()Ljava/lang/Long;
+	public final fun getPartition ()Ljava/lang/Integer;
+	public final fun getTimestamp ()Ljava/lang/Long;
+	public final fun getTopic ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/StreamlineMessage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/StreamlineMessage$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/StreamlineMessage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/StreamlineMessage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/StreamlineMessage$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/StreamlineTimeoutException : io/streamline/sdk/StreamlineException {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/streamline/sdk/StreamlineVerifier {
+	public static final field ATTEST_HEADER Ljava/lang/String;
+	public static final field Companion Lio/streamline/sdk/StreamlineVerifier$Companion;
+	public fun <init> (Lio/streamline/sdk/TrustedKeyResolver;)V
+	public fun <init> (Ljava/security/PublicKey;)V
+	public fun <init> (Ljava/security/PublicKey;Ljava/lang/String;)V
+	public final fun verify (Lio/streamline/sdk/StreamlineMessage;)Lio/streamline/sdk/VerificationResult;
+}
+
+public final class io/streamline/sdk/StreamlineVerifier$Companion {
+}
+
+public final class io/streamline/sdk/StringSerializer : io/streamline/sdk/MessageSerializer {
+	public fun <init> ()V
+	public synthetic fun deserialize (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+	public fun deserialize (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public synthetic fun serialize (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;
+	public fun serialize (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract interface class io/streamline/sdk/Telemetry {
+	public abstract fun startSpan (Ljava/lang/String;Ljava/util/Map;)Lio/streamline/sdk/SpanHandle;
+	public abstract fun traceparent ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/Telemetry$DefaultImpls {
+	public static synthetic fun startSpan$default (Lio/streamline/sdk/Telemetry;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/SpanHandle;
+}
+
+public final class io/streamline/sdk/TlsConfig {
+	public fun <init> ()V
+	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lio/streamline/sdk/TlsConfig;
+	public static synthetic fun copy$default (Lio/streamline/sdk/TlsConfig;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lio/streamline/sdk/TlsConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getInsecureSkipVerify ()Z
+	public final fun getKeyStorePassword ()Ljava/lang/String;
+	public final fun getKeyStorePath ()Ljava/lang/String;
+	public final fun getTrustStorePassword ()Ljava/lang/String;
+	public final fun getTrustStorePath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun validate ()V
+}
+
+public final class io/streamline/sdk/TopicDescription {
+	public static final field Companion Lio/streamline/sdk/TopicDescription$Companion;
+	public fun <init> (Ljava/lang/String;IIJLjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;IIJLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;IIJLjava/util/Map;)Lio/streamline/sdk/TopicDescription;
+	public static synthetic fun copy$default (Lio/streamline/sdk/TopicDescription;Ljava/lang/String;IIJLjava/util/Map;ILjava/lang/Object;)Lio/streamline/sdk/TopicDescription;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfig ()Ljava/util/Map;
+	public final fun getMessageCount ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPartitions ()I
+	public final fun getReplicationFactor ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/TopicDescription$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/TopicDescription$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/TopicDescription;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/TopicDescription;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/TopicDescription$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/TopicInfo {
+	public static final field Companion Lio/streamline/sdk/TopicInfo$Companion;
+	public fun <init> (Ljava/lang/String;IIJ)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun copy (Ljava/lang/String;IIJ)Lio/streamline/sdk/TopicInfo;
+	public static synthetic fun copy$default (Lio/streamline/sdk/TopicInfo;Ljava/lang/String;IIJILjava/lang/Object;)Lio/streamline/sdk/TopicInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessageCount ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPartitions ()I
+	public final fun getReplicationFactor ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class io/streamline/sdk/TopicInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lio/streamline/sdk/TopicInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lio/streamline/sdk/TopicInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lio/streamline/sdk/TopicInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/TopicInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class io/streamline/sdk/TopicNameValidator {
+	public static final field INSTANCE Lio/streamline/sdk/TopicNameValidator;
+	public final fun validate (Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/TopicNotFoundException : io/streamline/sdk/StreamlineException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/streamline/sdk/TracedAdminClient {
+	public fun <init> (Lio/streamline/sdk/AdminClient;Lio/streamline/sdk/Telemetry;)V
+	public final fun close ()V
+	public final fun createTopic (Ljava/lang/String;IILjava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun createTopic$default (Lio/streamline/sdk/TracedAdminClient;Ljava/lang/String;IILjava/util/Map;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun deleteTopic (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun describeConsumerGroup (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun describeTopic (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listConsumerGroups (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listTopics (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun query (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun serverInfo (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/TracedClient {
+	public fun <init> (Lio/streamline/sdk/StreamlineClient;Lio/streamline/sdk/Telemetry;)V
+	public final fun close ()V
+	public final fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun disconnect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun messages (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+	public final fun produce (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun produce$default (Lio/streamline/sdk/TracedClient;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun subscribe (Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/streamline/sdk/TrustedKeyResolver {
+	public abstract fun resolve (Ljava/lang/String;)Ljava/security/PublicKey;
+}
+
+public final class io/streamline/sdk/VerificationResult {
+	public static final field Companion Lio/streamline/sdk/VerificationResult$Companion;
+	public fun <init> (ZLjava/lang/String;Ljava/lang/Integer;Ljava/lang/String;J)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/Integer;Ljava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun copy (ZLjava/lang/String;Ljava/lang/Integer;Ljava/lang/String;J)Lio/streamline/sdk/VerificationResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/VerificationResult;ZLjava/lang/String;Ljava/lang/Integer;Ljava/lang/String;JILjava/lang/Object;)Lio/streamline/sdk/VerificationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContractId ()Ljava/lang/String;
+	public final fun getProducerId ()Ljava/lang/String;
+	public final fun getSchemaId ()Ljava/lang/Integer;
+	public final fun getTimestampMs ()J
+	public final fun getVerified ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/VerificationResult$Companion {
+}
+
+public final class io/streamline/sdk/moonshot/Attestation {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/streamline/sdk/moonshot/Attestation;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/Attestation;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/moonshot/Attestation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlgorithm ()Ljava/lang/String;
+	public final fun getKeyId ()Ljava/lang/String;
+	public final fun getPayloadHash ()Ljava/lang/String;
+	public final fun getSignature ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/AttestationClient : io/streamline/sdk/moonshot/MoonshotHttpBase {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun sign ([BLjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sign$default (Lio/streamline/sdk/moonshot/AttestationClient;[BLjava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun verify ([BLio/streamline/sdk/moonshot/Attestation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/moonshot/Branch {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;J)Lio/streamline/sdk/moonshot/Branch;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/Branch;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Lio/streamline/sdk/moonshot/Branch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAtMs ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getParent ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/BranchAdminClient : io/streamline/sdk/moonshot/MoonshotHttpBase {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;)V
+	public final fun createBranch (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun createBranch$default (Lio/streamline/sdk/moonshot/BranchAdminClient;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun deleteBranch (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun listBranches (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun mergeBranch (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/moonshot/ContractValidationResult {
+	public fun <init> (ZLjava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (ZLjava/util/List;Ljava/util/List;)Lio/streamline/sdk/moonshot/ContractValidationResult;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/ContractValidationResult;ZLjava/util/List;Ljava/util/List;ILjava/lang/Object;)Lio/streamline/sdk/moonshot/ContractValidationResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getValid ()Z
+	public final fun getWarnings ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/ContractsClient : io/streamline/sdk/moonshot/MoonshotHttpBase {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;)V
+	public final fun getContract (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun registerContract (Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun validate (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/moonshot/MemoryClient : io/streamline/sdk/moonshot/MoonshotHttpBase {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;)V
+	public final fun recall (Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun recall$default (Lio/streamline/sdk/moonshot/MemoryClient;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun remember (Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun remember$default (Lio/streamline/sdk/moonshot/MemoryClient;Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/moonshot/MemoryKind : java/lang/Enum {
+	public static final field FACT Lio/streamline/sdk/moonshot/MemoryKind;
+	public static final field OBSERVATION Lio/streamline/sdk/moonshot/MemoryKind;
+	public static final field PROCEDURE Lio/streamline/sdk/moonshot/MemoryKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWire ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/streamline/sdk/moonshot/MemoryKind;
+	public static fun values ()[Lio/streamline/sdk/moonshot/MemoryKind;
+}
+
+public final class io/streamline/sdk/moonshot/MemoryRecord {
+	public fun <init> (Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;J)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/streamline/sdk/moonshot/MemoryKind;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;J)Lio/streamline/sdk/moonshot/MemoryRecord;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/MemoryRecord;Ljava/lang/String;Lio/streamline/sdk/moonshot/MemoryKind;Ljava/lang/String;Ljava/util/List;JILjava/lang/Object;)Lio/streamline/sdk/moonshot/MemoryRecord;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgent ()Ljava/lang/String;
+	public final fun getKind ()Lio/streamline/sdk/moonshot/MemoryKind;
+	public final fun getTags ()Ljava/util/List;
+	public final fun getText ()Ljava/lang/String;
+	public final fun getTimestampMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/MergeReport {
+	public fun <init> (ILjava/util/List;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ILjava/util/List;)Lio/streamline/sdk/moonshot/MergeReport;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/MergeReport;ILjava/util/List;ILjava/lang/Object;)Lio/streamline/sdk/moonshot/MergeReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConflicts ()Ljava/util/List;
+	public final fun getMerged ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/MoonshotException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getStatus ()I
+}
+
+public abstract class io/streamline/sdk/moonshot/MoonshotHttpBase : java/lang/AutoCloseable {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;)V
+	protected final fun bearerAuthorization (Ljava/lang/String;)Ljava/lang/String;
+	public fun close ()V
+	protected final fun encode (Ljava/lang/String;)Ljava/lang/String;
+	protected final fun getAuthToken ()Ljava/lang/String;
+	protected final fun getBaseUrl ()Ljava/lang/String;
+	protected final fun getClient ()Lio/ktor/client/HttpClient;
+	protected final fun getJson ()Lkotlinx/serialization/json/Json;
+	protected final fun parseJson (Ljava/lang/String;)Lkotlinx/serialization/json/JsonElement;
+	protected final fun request (Lio/ktor/http/HttpMethod;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun request$default (Lio/streamline/sdk/moonshot/MoonshotHttpBase;Lio/ktor/http/HttpMethod;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/streamline/sdk/moonshot/MoonshotOptions {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/ktor/client/HttpClient;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;)Lio/streamline/sdk/moonshot/MoonshotOptions;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/MoonshotOptions;Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;ILjava/lang/Object;)Lio/streamline/sdk/moonshot/MoonshotOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthToken ()Ljava/lang/String;
+	public final fun getHttpClient ()Lio/ktor/client/HttpClient;
+	public final fun getHttpUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/SearchHit {
+	public fun <init> (Ljava/lang/String;IJDLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()D
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;IJDLjava/lang/String;)Lio/streamline/sdk/moonshot/SearchHit;
+	public static synthetic fun copy$default (Lio/streamline/sdk/moonshot/SearchHit;Ljava/lang/String;IJDLjava/lang/String;ILjava/lang/Object;)Lio/streamline/sdk/moonshot/SearchHit;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOffset ()J
+	public final fun getPartition ()I
+	public final fun getScore ()D
+	public final fun getSnippet ()Ljava/lang/String;
+	public final fun getTopic ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/streamline/sdk/moonshot/SemanticSearchClient : io/streamline/sdk/moonshot/MoonshotHttpBase {
+	public fun <init> (Lio/streamline/sdk/moonshot/MoonshotOptions;)V
+	public final fun search (Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun search$default (Lio/streamline/sdk/moonshot/SemanticSearchClient;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

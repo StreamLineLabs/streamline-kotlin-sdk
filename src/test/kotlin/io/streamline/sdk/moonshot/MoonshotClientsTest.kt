@@ -38,6 +38,19 @@ class MoonshotClientsTest {
     }
 
     @Test
+    fun moonshotOptionsRedactsAuthToken() {
+        val text = MoonshotOptions(
+            httpUrl = "http://url-user:url-secret@localhost:9094/path?token=query-secret",
+            authToken = "moonshot-secret",
+        ).toString()
+
+        assertFalse(text.contains("moonshot-secret"))
+        assertFalse(text.contains("url-secret"))
+        assertFalse(text.contains("query-secret"))
+        assertTrue(text.contains("[REDACTED]"))
+    }
+
+    @Test
     fun branchesListAndCreate() = runTest {
         val captured = mutableListOf<HttpRequestData>()
         val client = mockClient { req ->

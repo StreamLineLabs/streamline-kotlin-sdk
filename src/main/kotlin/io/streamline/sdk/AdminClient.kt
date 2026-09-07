@@ -49,6 +49,10 @@ class AdminClient(
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
+    init {
+        tls?.validate()
+    }
+
     // -- Topic Operations --
 
     /** List all topics on the server. */
@@ -574,7 +578,7 @@ class AdminClient(
                 if (auth != null) {
                     applyAuth(auth)
                 } else {
-                    authToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                    authToken?.let { header(HttpHeaders.Authorization, bearerAuthorization(it)) }
                 }
                 if (body != null) {
                     contentType(ContentType.Application.Json)

@@ -1,17 +1,15 @@
 # Docker Compose for integration testing
 # Usage: docker compose -f docker-compose.test.yml up -d
-version: "3.8"
 services:
   streamline:
-    image: ghcr.io/streamlinelabs/streamline:0.3.0
+    image: ghcr.io/streamlinelabs/streamline:0.4.0
     ports:
       - "9092:9092"
       - "9094:9094"
     environment:
       - STREAMLINE_LOG_LEVEL=info
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9094/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9094/health/live"]
       interval: 5s
       timeout: 5s
       retries: 10
-

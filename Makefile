@@ -4,35 +4,41 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 build: ## Compile the SDK
-	./gradlew build -x test -q 2>/dev/null || gradle build -x test -q
+	./gradlew build
 
 test: ## Run all tests
-	./gradlew test -q 2>/dev/null || gradle test -q
+	./gradlew test
 
 lint: ## Run linting checks
-	./gradlew detekt -q 2>/dev/null || echo "detekt not configured, skipping"
+	./gradlew ktlintCheck
 
 fmt: ## Check code formatting
-	@echo "Use IDE formatting or ktlint"
+	./gradlew ktlintFormat
 
 clean: ## Clean build artifacts
-	./gradlew clean -q 2>/dev/null || gradle clean -q
+	./gradlew clean
 
 package: ## Build JAR
-	./gradlew jar -q 2>/dev/null || gradle jar -q
+	./gradlew jar
 
 publish: ## Publish to Maven Local
-	./gradlew publishToMavenLocal -q 2>/dev/null || gradle publishToMavenLocal -q
+	./gradlew publishToMavenLocal
 
 integration-test: ## Run integration tests (requires Docker)
 	docker compose -f docker-compose.test.yml up -d
-	@echo "Waiting for Streamline server..."
-	@for i in $$(seq 1 30); do \
+	@trap 'docker compose -f docker-compose.test.yml down -v' EXIT; \
+	echo "Waiting for Streamline server..."; \
+	ready=false; \
+	for i in $$(seq 1 30); do \
 		if curl -sf http://localhost:9094/health/live > /dev/null 2>&1; then \
 			echo "Server ready"; \
+			ready=true; \
 			break; \
 		fi; \
 		sleep 2; \
-	done
-	./gradlew test -Dintegration=true || true
-	docker compose -f docker-compose.test.yml down -v
+	done; \
+	if [ "$$ready" != "true" ]; then \
+		echo "Server failed to become healthy"; \
+		exit 1; \
+	fi; \
+	./gradlew integrationTest
